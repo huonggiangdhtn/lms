@@ -1,0 +1,1 @@
+<h1>Welcome to the reource module</h1>
