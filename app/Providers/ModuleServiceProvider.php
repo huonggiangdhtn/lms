@@ -5,7 +5,7 @@ namespace App\Providers;
 use Illuminate\Support\ServiceProvider;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\View;
-
+use Illuminate\Support\Facades\File; // Use the File facade
 class ModuleServiceProvider extends ServiceProvider
 {
     public function register()
@@ -15,10 +15,36 @@ class ModuleServiceProvider extends ServiceProvider
 
     public function boot()
     {
-        $this->loadModuleRoutes();
+        // $this->loadModuleRoutes();
         $this->loadModuleViews();
+        $this->loadMigration();
+         
     }
+    
+    protected function loadMigration()
+    {
+        $modulesPath = base_path('app/Modules');
 
+        if (is_dir($modulesPath)) {
+            foreach (scandir($modulesPath) as $module) {
+                if ($module === '.' || $module === '..') {
+                    continue;
+                }
+
+                $viewPath = $modulesPath."/". $module."/Migrations";
+
+               
+                if (is_dir($viewPath)) {
+                 
+                    $this->loadMigrationsFrom([
+                        $modulesPath.'/'. $module .'/Migrations' ,
+                        
+                    ]);
+                   
+                }
+            }
+        }
+    }
     protected function loadModuleRoutes()
     {
         $modulesPath = base_path('app/Modules');
