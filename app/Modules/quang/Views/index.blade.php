@@ -1,0 +1,1 @@
+<h1>Welcome to the quang module</h1>
