@@ -6,11 +6,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Passport\HasApiTokens;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -18,9 +18,27 @@ class User extends Authenticatable
      * @var array<int, string>
      */
     protected $fillable = [
-        'fullname','username',
-        'email','phone','address','gender','photo','role_id','email_verified_at',
-        'password','status'
+        'code',
+        'global_id',
+        'full_name',
+        'username',
+        'email',
+        'password',
+        'email_verified_at',
+        'photo',
+        'phone',
+        'address',
+        'description',
+        'ship_id',
+        'ugroup_id',
+        'role',
+        'budget',
+        'totalpoint',
+        'totalrevenue',
+        'taxcode',
+        'taxname',
+        'taxaddress',
+        'status',
     ];
     
     /**
@@ -34,15 +52,43 @@ class User extends Authenticatable
     ];
 
     /**
-     * Get the attributes that should be cast.
+     * The attributes that should be cast.
      *
-     * @return array<string, string>
+     * @var array<string, string>
      */
-    protected function casts(): array
-    {
-        return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
-        ];
+    protected $casts = [
+        'email_verified_at' => 'datetime',
+        'password' => 'hashed',
+    ];
+
+    public static function deleteUser($user_id){
+        $user = User::find($user_id);
+        if(auth()->user()->role =='admin')
+        {
+            $user->delete();
+            return 1;
+        }
+        else{
+            $user->status = "inactive";
+            $user->save();
+            return 0;
+        }
+            
+        
     }
-}
+    public static function c_create($data)
+    {
+        
+        $pro = User::create($data);
+        $pro->code = "CUS" . sprintf('%09d',$pro->id);
+        $pro->save();
+       
+        
+       
+        return $pro;
+    }
+    
+    
+}   
+
+

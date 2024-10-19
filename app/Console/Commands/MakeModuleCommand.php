@@ -33,7 +33,7 @@ class MakeModuleCommand extends Command
         $this->files->makeDirectory("$modulePath/Views", 0755, true);
         $this->files->makeDirectory("$modulePath/Routes", 0755, true);
         $this->files->makeDirectory("$modulePath/Migrations", 0755, true);
-
+        
         // Tạo file route
         $this->files->put("$modulePath/Routes/web.php", "<?php\n\nuse Illuminate\Support\Facades\Route;\n\n// Define routes here\n");
 
