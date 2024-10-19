@@ -1,1 +1,0 @@
-<h1>Welcome to the A module</h1>
