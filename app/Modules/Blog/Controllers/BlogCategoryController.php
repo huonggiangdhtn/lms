@@ -74,25 +74,23 @@ class BlogCategoryController extends Controller
         }
         $data['slug'] = $slug;
 
-        $data['photo'] = $request->photo ?? asset('backend/images/profile-6.jpg');
-
-        // if ($request->hasFile('photo')) {
-        //     $file = $request->file('photo');
-        //     $filename = time() . '.' . $file->getClientOriginalExtension();
-        //     $path = $file->storeAs('images', $filename, 'public');
-        //     $data['photo'] = 'storage/' . $path;
-        // } else {
-        //     $data['photo'] = asset('backend/images/profile-6.jpg');
-        // }
+        // Xử lý tải ảnh
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('images', $filename, 'public');
+            $data['photo'] = 'storage/' . $path;
+        } else {
+            $data['photo'] = asset('backend/images/profile-6.jpg'); // Ảnh mặc định nếu không tải lên
+        }
 
         // Lấy ID người dùng hiện tại
-        $user = Auth::user(); // Sử dụng Auth facade
+        $user = Auth::user();
         if ($user) {
             $data['user_id'] = $user->id;
         } else {
             return back()->with('error', 'Bạn cần đăng nhập để tạo danh mục bài viết.');
         }
-
 
         $status = BlogCategory::create($data);
         return $status
@@ -135,12 +133,21 @@ class BlogCategoryController extends Controller
 
         $this->validate($request, [
             'title' => 'string|required',
-            'photo' => 'string|nullable',
+            'photo' => 'image|nullable|max:2048',
             'status' => 'required|in:active,inactive',
         ]);
 
         $data = $request->all();
-        $data['photo'] = $request->photo ?? $blogcat->photo ?? asset('backend/images/profile-6.jpg');
+
+        // Xử lý tải ảnh
+        if ($request->hasFile('photo')) {
+            $file = $request->file('photo');
+            $filename = time() . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('images', $filename, 'public');
+            $data['photo'] = 'storage/' . $path;
+        } else {
+            $data['photo'] = $blogcat->photo ?? asset('backend/images/profile-6.jpg');
+        }
 
         $status = $blogcat->fill($data)->save();
         return $status
@@ -190,9 +197,9 @@ class BlogCategoryController extends Controller
                 ->withQueryString();
 
             $breadcrumb = '
-        <li class="breadcrumb-item"><a href="#">/</a></li>
-        <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.blog.index') . '">Bài viết</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>';
+            <li class="breadcrumb-item"><a href="#">/</a></li>
+            <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.blog.index') . '">Bài viết</a></li>
+            <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>';
 
             // Thông báo tìm kiếm
             $message = $blogcats->isEmpty()
