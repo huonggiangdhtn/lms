@@ -2,18 +2,17 @@
 @section('content')
     <div class="content">
         <h2 class="intro-y text-lg font-medium mt-10">
-            Kết quả tìm kiếm bài viết
+            Kết quả tìm kiếm danh mục
         </h2>
         <div class="grid grid-cols-12 gap-6 mt-5">
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-
-                <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $blogs->currentPage() }} trong
-                    {{ $blogs->lastPage() }} trang</div>
+                <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $blogcats->currentPage() }} trong
+                    {{ $blogcats->lastPage() }} trang</div>
                 <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
                     <div class="w-56 relative text-slate-500">
-                        <form action="{{ route('admin.blog.search') }}" method = "get">
+                        <form action="{{ route('admin.blogcategory.search') }}" method="get">
                             @csrf
-                            <input type="text" name="datasearch" value="{{ $searchdata }}"
+                            <input type="text" name="datasearch" value="{{ old('datasearch', $searchdata) }}"
                                 class="ipsearch form-control w-56 box pr-10" placeholder="Search...">
                             <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-lucide="search"></i>
                         </form>
@@ -29,12 +28,11 @@
                             <th class="whitespace-nowrap">DANH MỤC</th>
                             <th class="text-center whitespace-nowrap">PHOTO</th>
                             <th class="text-center whitespace-nowrap">TRẠNG THÁI</th>
-
                             <th></th>
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach ($blogs as $item)
+                        @foreach ($blogcats as $item)
                             <tr class="intro-x">
                                 <td>
                                     <a href="" class="font-medium whitespace-nowrap">{{ $item->title }}</a>
@@ -54,21 +52,22 @@
                                         data-offlabel="inactive" {{ $item->status == 'active' ? 'checked' : '' }}
                                         data-size="sm" name="toogle" value="{{ $item->id }}" data-style="ios">
                                 </td>
-
                                 <td class="table-report__action w-56">
                                     <div class="flex justify-center items-center">
-                                        <a href="{{ route('admin.blog.edit', $item->id) }}" class="flex items-center mr-3"
-                                            href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i>
-                                            Edit </a>
-                                        <form action="{{ route('admin.blog.destroy', $item->id) }}" method = "post">
+                                        <a href="{{ route('admin.blogcategory.edit', $item->id) }}"
+                                            class="flex items-center mr-3">
+                                            <i data-lucide="check-square" class="w-4 h-4 mr-1"></i>
+                                            Edit
+                                        </a>
+                                        <form action="{{ route('admin.blogcategory.destroy', $item->id) }}" method="post">
                                             @csrf
                                             @method('delete')
                                             <a class="flex items-center text-danger dltBtn" data-id="{{ $item->id }}"
                                                 href="javascript:;" data-tw-toggle="modal"
-                                                data-tw-target="#delete-confirmation-modal"> <i data-lucide="trash-2"
-                                                    class="w-4 h-4 mr-1"></i> Delete </a>
+                                                data-tw-target="#delete-confirmation-modal">
+                                                <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete
+                                            </a>
                                         </form>
-
                                     </div>
                                 </td>
                             </tr>
@@ -81,13 +80,13 @@
         <!-- BEGIN: Pagination -->
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-row sm:flex-nowrap items-center">
             <nav class="w-full sm:w-auto sm:mr-auto">
-                {{ $blogs->links('vendor.pagination.tailwind') }}
+                {{ $blogcats->links('vendor.pagination.tailwind') }}
             </nav>
-
         </div>
         <!-- END: Pagination -->
     </div>
 @endsection
+
 @section('scripts')
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <script src="{{ asset('backend/assets/vendor/js/bootstrap-switch-button.min.js') }}"></script>
@@ -97,6 +96,7 @@
                 'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
             }
         });
+
         $('.dltBtn').click(function(e) {
             var form = $(this).closest('form');
             var dataID = $(this).data('id');
@@ -111,23 +111,14 @@
                 confirmButtonText: 'Vâng, tôi muốn xóa!'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    // alert(form);
                     form.submit();
-                    // Swal.fire(
-                    // 'Deleted!',
-                    // 'Your file has been deleted.',
-                    // 'success'
-                    // );
                 }
             });
         });
-    </script>
-    <script>
+
         $(".ipsearch").on('keyup', function(e) {
             e.preventDefault();
             if (e.key === 'Enter' || e.keyCode === 13) {
-
-                // Do something
                 var data = $(this).val();
                 var form = $(this).closest('form');
                 if (data.length > 0) {
@@ -146,7 +137,7 @@
             var mode = $(this).prop('checked');
             var id = $(this).val();
             $.ajax({
-                url: "{{ route('admin.blog.status') }}",
+                url: "{{ route('admin.blogcategory.status') }}",
                 type: "post",
                 data: {
                     _token: '{{ csrf_token() }}',
@@ -161,11 +152,8 @@
                         showConfirmButton: false,
                         timer: 1000
                     });
-                    console.log(response.msg);
                 }
-
             });
-
         });
     </script>
 @endsection

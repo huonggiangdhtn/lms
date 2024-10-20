@@ -9,29 +9,28 @@ class AdminController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function __construct( )
+    public function __construct()
     {
-        $this->pagesize = env('NUMBER_PER_PAGE','20');
+        $this->pagesize = env('NUMBER_PER_PAGE', '20');
         $this->middleware('admin.auth');
     }
     public function index()
     {
         //
-       
+
         $func = "admin_view";
-        if(!$this->check_function($func))
-        {
+        if (!$this->check_function($func)) {
             return redirect()->route('home');
         }
         $data['breadcrumb'] = '
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item active" aria-current="page"> Bảng điều khiển</li>';
-       $data['active_menu']='dashboard';
-        return view ('backend.index',   $data);
-   
+        $data['active_menu'] = 'dashboard';
+        return view('backend.index',   $data);
+
         // echo 'i am admin';
     }
-    
+
     /**
      * Show the form for creating a new resource.
      */
