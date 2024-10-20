@@ -1,7 +1,7 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\GroupMemberController;
 Route::get('/', function () {
     return view('welcome');
 });
@@ -55,7 +55,12 @@ Route::group( ['prefix'=>'admin/','middleware'=>'admin.auth', 'as'=>'admin.'],fu
     Route::post('product-upload', [\App\Http\Controllers\FilesController::class, 'productUpload' ])->name('upload.product');
     Route::post('upload-ckeditor', [\App\Http\Controllers\FilesController::class, 'ckeditorUpload' ])->name('upload.ckeditor');
 
-   
+    ///// group_member///////////
+    Route::post('/groups/{groupId}/members', [GroupMemberController::class, 'addMember']);
+    Route::delete('/groups/{groupId}/members/{userId}', [GroupMemberController::class, 'removeMember']);
+    Route::put('/groups/{groupId}/members/{userId}', [GroupMemberController::class, 'updateMember']);
+    Route::get('/groups/{groupId}/members', [GroupMemberController::class, 'listMembers']);
+    
 });
 
 // use App\Modules\Blog\Controllers\BlogController;
