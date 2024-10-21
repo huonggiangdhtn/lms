@@ -13,6 +13,9 @@ return new class extends Migration
     {
         Schema::create('user_product_ratings', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('user_id')->constrained()->onDelete('cascade');
+            $table->foreignId('product_id')->constrained()->onDelete('cascade');
+            $table->integer('rating');
             $table->timestamps();
         });
     }
