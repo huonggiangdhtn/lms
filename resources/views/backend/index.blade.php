@@ -9,7 +9,7 @@
 @section('content')
 
 <div class="grid grid-cols-12 gap-6">
-    <h1> content </h1>
+    <h1> Con ten đã thay đổi </h1>
 </div>
  
 @endsection

@@ -16,8 +16,6 @@ Route::group( ['prefix'=>'admin/'  , 'as' => 'admin.' ],function(){
      Route::resource('blog', BlogController::class);
      Route::post('blog_status',[ BlogController::class,'blogStatus'])->name('blog.status');
      Route::get('blog_search',[ BlogController::class,'blogSearch'])->name('blog.search');
- 
- 
 });
 
 

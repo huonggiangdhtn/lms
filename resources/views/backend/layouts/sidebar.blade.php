@@ -38,7 +38,7 @@
                 </a>
             </li>
       </ul>
-  </li>
+    </li>
      
     <li>
         <a href="javascript:;" class="side-menu  class="side-menu {{($active_menu =='ugroup_add'|| $active_menu=='ugroup_list' || $active_menu =='ctm_add'|| $active_menu=='ctm_list'  )?'side-menu--active':''}}">
@@ -108,6 +108,11 @@
               
           </ul>
     </li>
-    
+    <li>
+        <a href="{{ route('admin.recommend.index', ['userId' => 1]) }}" class="side-menu {{$active_menu=='ctm_list'?'side-menu--active':''}}">
+            <div class="side-menu__icon"> <i data-lucide="star"></i></div>
+            <div class="side-menu__title">Danh sách người dùng</div>
+        </a>
+    </li>
 </ul>
 </nav>
