@@ -17,8 +17,13 @@ class CreateResourcesTable extends Migration
             $table->string('file_size');
             $table->string('path');
             $table->string('url');
-            $table->unsignedBigInteger('resource_type_id');
-            $table->unsignedBigInteger('resource_link_type_id');
+            $table->string('tags')->nullable();
+            $table->string('description')->nullable();
+            $table->string('youtube_url')->nullable();
+            $table->string('document_url')->nullable();
+            $table->string('image_url')->nullable();
+            $table->unsignedBigInteger('resource_type_id')->nullable()->default(null);
+            $table->unsignedBigInteger('resource_link_type_id')->nullable()->default(null);
             $table->timestamps();
         });
     }
