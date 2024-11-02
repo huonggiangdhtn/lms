@@ -5,17 +5,13 @@ namespace App\Modules\Recommend\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
-class Module extends Model
+class HinhThucThi extends Model
 {
+    //
     use HasFactory;
 
     protected $fillable = [
         'title',
-        'photo',
-        'code',
-        'content',
-        'summary',
-        'tinchi',
-        'hinhthucthi'
+        'status',
     ];
 }

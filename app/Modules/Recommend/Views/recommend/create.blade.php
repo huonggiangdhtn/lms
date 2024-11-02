@@ -18,16 +18,44 @@
     <div class="grid grid-cols-12 gap-12 mt-5">
         <div class="intro-y col-span-12 lg:col-span-12">
             <!-- BEGIN: Form Layout -->
-            <form method="post" action="{{route('admin.recommend.store')}}">
+            <form method="post" action="{{route('admin.recommend.store')}}" enctype="multipart/form-data">
                 @csrf
                 <div class="intro-y box p-5">
-                    <div>
-                        <label for="regular-form-1" class="form-label">Tên học phần</label>
-                        <input name="name" type="text" class="form-control" placeholder="name">
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Tiêu đề</label>
+                        <input name="title" type="text" class="form-control" placeholder="tiêu đề">
                     </div>
-                    <div>
-                        <label for="regular-form-1" class="form-label">Số tín chỉ</label>
-                        <input name="tinchi" type="text" class="form-control" placeholder="number">
+                    <div class="mt-3">
+                        <label for="photo" class="form-label">Photo</label>
+                        <input type="file" id="photo" name="photo" />
+                    </div>
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Mã học phần</label>
+                        <input name="code" type="text" class="form-control" placeholder="mã học phần">
+                    </div>
+                    <div class="mt-3">
+                        <label for="" class="form-label">Nội dung</label>
+                        <textarea class="editor" name="content" id="editor2">{{ old('content') }}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <label for="" class="form-label">Tóm tắt</label>
+                        <textarea class="form-control"   id="editor1" name="summary" >{{old('summary')}}</textarea>
+                    </div>
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Tín chỉ</label>
+                        <input name="tinchi" type="text" class="form-control" placeholder="tín chỉ">
+                    </div>
+                    {{-- <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Hình thức thi</label>
+                        <input name="id_hinhthucthi" type="text" class="form-control" placeholder="hình thức thi">
+                    </div> --}}
+                    <div class="mt-3">
+                        <label for="regular-form-1" class="form-label">Hình thức thi</label>
+                        <select name="hinhthucthi" class="form-select mt-2">
+                            @foreach($hinhthucthi as $data)
+                                <option value="{{$data->title}}">{{ $data->title }}</option>
+                            @endforeach
+                        </select>
                     </div>
                     <div class="text-right mt-5">
                         <button type="submit" class="btn btn-primary w-24">Lưu</button>

@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Storage;
 use App\Modules\Recommend\Models\Module;
+// use App\Modules\Recommend\Models\HinhThucThi;
+use App\Modules\Recommend\Models\HinhThucThi;
 
 
 class RecommendController extends Controller
@@ -37,33 +39,55 @@ class RecommendController extends Controller
 
     public function create()
     {
+        $hinhthucthi = HinhThucThi::all();
         $breadcrumb = '
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item active" aria-current="page">Thêm học phần</li>';
-        $active_menu = "resource_type_add";
-        return view('Recommend::recommend.create', compact('breadcrumb', 'active_menu'));
+        $active_menu = "recommend_type_add";
+        return view('Recommend::recommend.create', compact('breadcrumb', 'active_menu','hinhthucthi'));
     }
 
     public function store(Request $request)
-    {
-        Module::create($request->all());
-        return redirect()->route('admin.recommend.index')->with('thongbao', 'Tạo học phần thành công.');
-    }
+{
+    // Xác thực dữ liệu nhập vào
+    $request->validate([
+        'title' => 'required|string|max:255',
+        'photo' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048',
+        'code' => 'required|string|max:255',
+        'content' => 'string|required', // Yêu cầu nội dung
+        'summary' => 'nullable|string',
+        'tinchi' => 'required|string|max:50',
+        'hinhthucthi' => 'required|string|max:50',
+    ]);
+
+    // Lấy tất cả dữ liệu từ yêu cầu
+    $requestData = $request->all();
+
+    // Xử lý tệp hình ảnh
+    $fileName = time() . '_' . $request->file('photo')->getClientOriginalName();
+    $path = $request->file('photo')->storeAs('recommend', $fileName, 'public');
+    $requestData['photo'] = '/storage/' . $path; // Cập nhật đường dẫn tệp tin trong dữ liệu
+
+    // Lưu dữ liệu vào cơ sở dữ liệu
+    Module::create($requestData);
+    return redirect()->route('admin.recommend.index')->with('thongbao', 'Tạo học phần thành công.');
+}
 
     public function edit($id)
     {
         $module = Module::findOrFail($id); // Lấy bản ghi theo ID
+        $hinhthucthi = HinhThucThi::all(); // Lấy tất cả hình thức thi
         $breadcrumb = '
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa học phần</li>';
         $active_menu = "resource_type_edit";
-        return view('Recommend::recommend.edit', compact('module', 'breadcrumb', 'active_menu'));
+        return view('Recommend::recommend.edit', compact('module','hinhthucthi', 'breadcrumb', 'active_menu'));
     }
    
     public function update(Request $request, $id)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
             'tinchi' => 'string|max:50',
         ]);
 
@@ -94,21 +118,21 @@ class RecommendController extends Controller
         {
             $active_menu="recommend_list";
             $searchdata =$request->datasearch;  
-            // $module = DB::table('modules')->where('name','LIKE','%'.$request->datasearch.'%')
-            // ->paginate($this->pagesize)->withQueryString();
+            $module = DB::table('modules')->where('title','LIKE','%'.$request->datasearch.'%')
+            ->paginate($this->pagesize)->withQueryString();
 
             // Lấy danh sách module mà không có người dùng tương ứng
-            $userModuleIds = DB::table('modules')
-            ->join('users', 'users.id', '=', 'modules.user_id')
-            ->where('users.code', 'LIKE', '%' . $request->datasearch . '%')
-            ->pluck('modules.id')
-            ->toArray();
+            // $userModuleIds = DB::table('modules')
+            // ->join('users', 'users.id', '=', 'modules.user_id')
+            // ->where('users.code', 'LIKE', '%' . $request->datasearch . '%')
+            // ->pluck('modules.id')
+            // ->toArray();
 
-            $module = DB::table('modules')
-            ->whereNotIn('id', $userModuleIds)
-            ->select('name', 'tinchi', 'id')
-            ->paginate($this->pagesize)
-            ->withQueryString();
+            // $module = DB::table('modules')
+            // ->whereNotIn('id', $userModuleIds)
+            // ->select('title', 'tinchi', 'id')
+            // ->paginate($this->pagesize)
+            // ->withQueryString();
 
             $breadcrumb = '
             <li class="breadcrumb-item"><a href="#">/</a></li>

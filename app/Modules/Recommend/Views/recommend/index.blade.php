@@ -15,7 +15,7 @@
                 <div class="w-56 relative text-slate-500">
                     <form action="{{route('admin.recommend.search')}}" method = "get">
                         @csrf
-                        <input type="text" name="datasearch" class="ipsearch form-control w-56 box pr-10" placeholder="Tra cứu mssv">
+                        <input type="text" name="datasearch" class="ipsearch form-control w-56 box pr-10" placeholder="Seach">
                         <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-lucide="search"></i> 
                     </form>
                 </div>
@@ -43,8 +43,12 @@
             <table class="table table-report -mt-2">
                 <thead>
                     <tr>
-                        <th class="whitespace-nowrap">TÊN</th>
-                        <th class="whitespace-nowrap">SỐ TÍN CHỈ</th>                        
+                        <th class="whitespace-nowrap">TITLE</th>
+                        <th class="whitespace-nowrap">PHOTO</th>                        
+                        <th class="whitespace-nowrap">CODE</th>
+                        <th class="whitespace-nowrap">SUMMARY</th>
+                        <th class="whitespace-nowrap">TÍN CHỈ</th>
+                        <th class="whitespace-nowrap">HÌNH THỨC THI</th>
                         <th class="whitespace-nowrap">TRẠNG THÁI</th>
                     </tr>
                 </thead>
@@ -52,14 +56,29 @@
                     @foreach($module as $item)
                     <tr class="intro-x">
                         <td>
-                            <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->name}}</p> 
+                            <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->title}}</p> 
                         </td>
                         {{-- <td class="text-left">{{$item->cat_id?\App\Models\BlogCategory::find($item->cat_id)->title:''}}</td> --}}
+                        <td class="w-40">
+                            <div class="flex">
+                                <div class="w-10 h-10 image-fit zoom-in">
+                                    <img  class="tooltip rounded-full" 
+                                        src="{{asset('storage/recommend/'.$item->photo)}}">
+                                </div>
+                            </div>
+                        </td>
+                        <td>
+                            <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->code}}</p> 
+                        </td>
+                        <td>
+                            <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->summary}}</p> 
+                        </td>
                         <td>
                             <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->tinchi}}</p> 
                         </td>
-    
-                       
+                        <td>
+                            <p target="_blank" href="" class="font-medium whitespace-nowrap">{{$item->hinhthucthi}}</p> 
+                        </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center">
                                 <a href="{{route('admin.recommend.edit',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a>
