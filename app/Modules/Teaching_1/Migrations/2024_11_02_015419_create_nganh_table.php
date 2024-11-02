@@ -25,6 +25,6 @@ class CreateNganhTable extends Migration
 
     public function down()
     {
-        Schema::dropIfExists('nganh');
+        Schema::dropIfExists('nganh') ;
     }
 }

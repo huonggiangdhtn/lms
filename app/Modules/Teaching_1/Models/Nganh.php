@@ -25,6 +25,6 @@ class Nganh extends Model
     // Định nghĩa mối quan hệ với bảng donvi
     public function donvi()
     {
-        return $this->belongsTo(Donvi::class, 'donvi_id');
+        return $this->belongsTo(Donvi::class, 'donvi_id');   
     }
 }
