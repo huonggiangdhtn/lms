@@ -6,23 +6,22 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    
     public function up()
     {
         Schema::create('donvi', function (Blueprint $table) {
             $table->id();
-            $table->string('title'); // Tên đơn vị
-            $table->string('slug')->unique(); // Slug của đơn vị (duy nhất)
-            $table->unsignedBigInteger('parent_id')->nullable(); // Khóa ngoại đến đơn vị cha
-            $table->json('children_id')->nullable(); // Các đơn vị con dưới dạng JSON
+            $table->string('title'); // Name of the unit
+            $table->string('slug')->unique(); // Unique slug for the unit
+            $table->unsignedBigInteger('parent_id')->nullable(); // Foreign key to the parent unit
+            $table->json('children_id')->nullable(); // Child units in JSON format
+            $table->enum('status', ['active', 'inactive'])->default('active'); // Status of the unit
             $table->timestamps();
 
-            // Khai báo khóa ngoại cho parent_id
+            // Foreign key declaration for parent_id
             $table->foreign('parent_id')->references('id')->on('donvi')->onDelete('cascade');
         });
     }
 
-    
     public function down()
     {
         Schema::dropIfExists('donvi');
