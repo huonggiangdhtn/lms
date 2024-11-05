@@ -15,10 +15,26 @@
                     <input id="title" name="title" type="text" value="{{ $nganh->title }}" class="form-control" placeholder="Tên ngành" required>
                 </div>
                 <div class="mt-3">
+                    <label for="code" class="form-label">Mã ngành</label>
+                    <input id="code" name="code" type="text" value="{{ $nganh->code }}" class="form-control" placeholder="Mã ngành" required>
+                </div>
+                <div class="mt-3">
+                    <label for="content" class="form-label">Nội dung</label>
+                    <textarea id="content" name="content" class="form-control" placeholder="Nội dung" required>{{ $nganh->content }}</textarea>
+                </div>
+                <div class="mt-3">
                     <label for="status" class="form-select-label">Tình trạng</label>
                     <select name="status" class="form-select mt-2" required>
                         <option value="active" {{ $nganh->status == 'active' ? 'selected' : '' }}>Active</option>
                         <option value="inactive" {{ $nganh->status == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                </div>
+                <div class="mt-3">
+                    <label for="donvi_id" class="form-label">Đơn vị ID</label>
+                    <select name="donvi_id" class="form-select mt-2" required>
+                        @foreach($donvis as $donvi)
+                            <option value="{{ $donvi->id }}" {{ $nganh->donvi_id == $donvi->id ? 'selected' : '' }}>{{ $donvi->title }}</option>
+                        @endforeach
                     </select>
                 </div>
                 <div class="text-right mt-5">

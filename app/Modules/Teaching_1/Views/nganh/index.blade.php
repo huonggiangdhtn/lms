@@ -1,6 +1,7 @@
 @extends('backend.layouts.master')
 @section('content')
 
+
 <h2 class="intro-y text-lg font-medium mt-10">Danh sách ngành</h2>
 <div class="grid grid-cols-12 gap-6 mt-5">
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
@@ -18,7 +19,11 @@
         <table class="table table-report -mt-2">
             <thead>
                 <tr>
+                    <th class="whitespace-nowrap">ID</th>
                     <th class="whitespace-nowrap">Tên ngành</th>
+                    <th class="whitespace-nowrap">Mã ngành</th>
+                    <th class="whitespace-nowrap">Nội dung</th>
+                    <th class="whitespace-nowrap">Đơn vị</th>
                     <th class="text-center whitespace-nowrap">Trạng thái</th>
                     <th class="whitespace-nowrap">Hành động</th>
                 </tr>
@@ -26,7 +31,11 @@
             <tbody>
                 @foreach($nganhs as $item)
                 <tr class="intro-x">
+                    <td>{{ $item->id }}</td>
                     <td><a target="_blank" href="#" class="font-medium whitespace-nowrap">{{ $item->title }}</a></td>
+                    <td>{{ $item->code }}</td>
+                    <td>{{ $item->content }}</td>
+                    <td>{{ $item->donvi->title ?? 'Chưa xác định' }}</td> <!-- Hiển thị tên đơn vị -->
                     <td class="text-center">
                         <input type="checkbox" 
                                data-toggle="switchbutton" 
