@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Modules\Teaching_1\Controllers\NganhController;
 
+
 // Nhóm route cho quản lý ngành
 Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     Route::resource('nganh', NganhController::class);
