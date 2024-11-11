@@ -33,18 +33,20 @@ class NganhController extends Controller
     }
 
     public function create()
-    {
-        $this->authorizeFunction("nganh_add");
+{
+    $this->authorizeFunction("nganh_add");
 
-        $data['donvis'] = \App\Modules\Teaching_1\Models\Donvi::where('status', 'active')->orderBy('title', 'ASC')->get();
-        $data['active_menu'] = "nganh_add";
-        $data['breadcrumb'] = '
-        <li class="breadcrumb-item"><a href="#">/</a></li>
-        <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.nganh.index') . '">Ngành</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Tạo Ngành</li>';
-        
-        return view('Teaching_1::nganh.create', $data);
-    }
+    // Lấy danh sách đơn vị từ bảng donvi mà không cần điều kiện status
+    $data['donvis'] = \App\Modules\Teaching_1\Models\Donvi::orderBy('title', 'ASC')->get();
+    
+    $data['active_menu'] = "nganh_add";
+    $data['breadcrumb'] = '
+    <li class="breadcrumb-item"><a href="#">/</a></li>
+    <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.nganh.index') . '">Ngành</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Tạo Ngành</li>';
+    
+    return view('Teaching_1::nganh.create', $data);
+}
 
     public function store(Request $request)
 {
@@ -65,88 +67,95 @@ class NganhController extends Controller
         : back()->with('error', 'Có lỗi xảy ra!');
 }
 
-    public function edit(string $id)
-    {
-        $this->authorizeFunction("nganh_edit");
+public function edit(string $id)
+{
+    $this->authorizeFunction("nganh_edit");
 
-        $donvis = \App\Modules\Teaching_1\Models\Donvi::where('status', 'active')->orderBy('title', 'ASC')->get();
-        $nganh = Nganh::findOrFail($id);
+    // Lấy danh sách tất cả đơn vị từ bảng donvi
+    $donvis = \App\Modules\Teaching_1\Models\Donvi::orderBy('title', 'ASC')->get();
+    $nganh = Nganh::findOrFail($id);
 
+    $active_menu = "nganh_list";
+    $breadcrumb = '
+    <li class="breadcrumb-item"><a href="#">/</a></li>
+    <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.nganh.index') . '">Ngành</a></li>
+    <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa Ngành</li>';
+
+    return view('Teaching_1::nganh.edit', compact('breadcrumb', 'nganh', 'active_menu', 'donvis'));
+}
+
+public function update(Request $request, string $id)
+{
+    $func = "nganh_edit";
+    if (!$this->check_function($func)) {
+        return redirect()->route('unauthorized');
+    }
+
+    $nganh = Nganh::find($id);
+    if ($nganh) {
+        // Xác thực dữ liệu
+        $this->validate($request, [
+            'title' => 'string|required',
+            'code' => 'string|required',
+            'content' => 'string|required',
+            'status' => 'required|in:active,inactive',
+            'donvi_id' => 'numeric|nullable',
+        ]);
+
+        // Lấy dữ liệu từ request
+        $data = $request->all();
+        $data['slug'] = Str::slug($request->input('title'));
+        $data['slug'] = $this->generateUniqueSlug($data['slug'], $nganh->id); // Tạo slug duy nhất
+
+        // Cập nhật dữ liệu
+        $status = $nganh->fill($data)->save();
+
+        // Trả về thông báo thành công và chuyển hướng
+        return $status
+            ? redirect()->route('admin.nganh.index')->with('success', 'Cập nhật thành công')
+            : back()->with('error', 'Có lỗi xảy ra!');
+    } else {
+        return back()->with('error', 'Không tìm thấy dữ liệu');
+    }
+}
+
+public function nganhStatus(Request $request)
+{
+    $this->validate($request, [
+        'id' => 'required|exists:nganh,id',
+        'mode' => 'required|in:true,false',
+    ]);
+
+    $status = $request->mode == 'true' ? 'active' : 'inactive';
+    DB::table('nganh')->where('id', $request->id)->update(['status' => $status]);
+
+    return response()->json(['msg' => "Cập nhật trạng thái thành công!", 'status' => true]);
+}
+
+public function nganhSearch(Request $request)
+{
+    $this->authorizeFunction("nganh_list");
+
+    if ($request->has('datasearch') && !empty($request->datasearch)) {
         $active_menu = "nganh_list";
+        $searchdata = $request->input('datasearch');
+
+        $nganhs = DB::table('nganh')
+            ->where('title', 'LIKE', '%' . $searchdata . '%')
+            ->orWhere('content', 'LIKE', '%' . $searchdata . '%')
+            ->paginate($this->pagesize)
+            ->withQueryString();
+
         $breadcrumb = '
         <li class="breadcrumb-item"><a href="#">/</a></li>
         <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.nganh.index') . '">Ngành</a></li>
-        <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa Ngành</li>';
+        <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>';
 
-        return view('Teaching_1::nganh.edit', compact('breadcrumb', 'nganh', 'active_menu', 'donvis'));
+        return view('Teaching_1::nganh.search', compact('nganhs', 'breadcrumb', 'searchdata', 'active_menu'));
+    } else {
+        return redirect()->route('admin.nganh.index')->with('success', 'Không có thông tin tìm kiếm!');
     }
-
-    public function update(Request $request, string $id)
-    {
-        $this->authorizeFunction("nganh_edit");
-    
-        $nganh = Nganh::findOrFail($id);
-        $this->validateRequest($request);
-    
-        $data = $request->all();
-        $data['slug'] = Str::slug($request->input('title'));
-        $data['slug'] = $this->generateUniqueSlug($data['slug'], $nganh->id); // Truyền ID để kiểm tra duy nhất
-    
-        $nganh->fill($data)->save();
-    
-        return redirect()->route('admin.nganh.index')->with('success', 'Cập nhật thành công');
-    }
-    public function destroy(string $id)
-    {
-        $this->authorizeFunction("nganh_delete");
-
-        $nganh = Nganh::findOrFail($id);
-        $nganh->delete();
-
-        return redirect()->route('admin.nganh.index')->with('success', 'Xóa ngành thành công!');
-    }
-
-    public function nganhStatus(Request $request)
-    {
-        $func = "nganh_edit"; // Tên hàm kiểm tra quyền
-        if (!$this->check_function($func)) {
-            return redirect()->route('unauthorized');
-        }
-    
-        // Kiểm tra trạng thái từ request
-        if ($request->mode == 'true') {
-            DB::table('nganh')->where('id', $request->id)->update(['status' => 'active']);
-        } else {
-            DB::table('nganh')->where('id', $request->id)->update(['status' => 'inactive']);
-        }
-        
-        return response()->json(['msg' => "Cập nhật trạng thái ngành thành công", 'status' => true]);
-    }
-
-    public function nganhSearch(Request $request)
-    {
-        $this->authorizeFunction("nganh_list");
-
-        if ($request->datasearch) {
-            $active_menu = "nganh_list";
-            $searchdata = $request->datasearch;
-
-            $nganhs = DB::table('nganh')
-                ->where('title', 'LIKE', '%' . $searchdata . '%')
-                ->orWhere('content', 'LIKE', '%' . $searchdata . '%')
-                ->paginate($this->pagesize)
-                ->withQueryString();
-
-            $breadcrumb = '
-            <li class="breadcrumb-item"><a href="#">/</a></li>
-            <li class="breadcrumb-item" aria-current="page"><a href="' . route('admin.nganh.index') . '">Ngành</a></li>
-            <li class="breadcrumb-item active" aria-current="page">Tìm kiếm</li>';
-
-            return view('Teaching_1::nganh.search', compact('nganhs', 'breadcrumb', 'searchdata', 'active_menu'));
-        } else {
-            return redirect()->route('admin.nganh.index')->with('success', 'Không có thông tin tìm kiếm!');
-        }
-    }
+}
 
     // Helper methods
     protected function validateRequest(Request $request)
@@ -178,4 +187,11 @@ class NganhController extends Controller
             return redirect()->route('unauthorized');
         }
     }
+
+
+    public function show(string $id)
+{
+    $nganh = Nganh::findOrFail($id);
+    return view('Teaching_1::nganh.show', compact('nganh'));
+}
 }
