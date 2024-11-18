@@ -64,6 +64,32 @@
                 
           </ul>
         </li>
+
+        <!-- student -->
+        <li>
+            <a href="javascript:;" class="side-menu side-menu{{ ($active_menu == 'student_list' || $active_menu == 'student_add') ? '--active' : '' }}">
+                <div class="side-menu__icon"> <i data-lucide="user"></i> </div>
+                <div class="side-menu__title">
+                    Sinh Viên
+                    <div class="side-menu__sub-icon transform"> <i data-lucide="chevron-down"></i> </div>
+                </div>
+            </a>
+            <ul class="{{ ($active_menu == 'student_list' || $active_menu == 'student_add') ? 'side-menu__sub-open' : '' }}">
+                <li>
+                    <a href="{{ route('student.index') }}" class="side-menu {{ $active_menu == 'student_list' ? 'side-menu--active' : '' }}">
+                        <div class="side-menu__icon"> <i data-lucide="list"></i> </div>
+                        <div class="side-menu__title">Danh sách Sinh Viên</div>
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ route('student.create') }}" class="side-menu {{ $active_menu == 'student_add' ? 'side-menu--active' : '' }}">
+                        <div class="side-menu__icon"> <i data-lucide="plus"></i> </div>
+                        <div class="side-menu__title">Thêm Sinh Viên</div>
+                    </a>
+                </li>
+            </ul>
+        </li>
+        
         {{-- nganh --}}
         <li>
             <a href="javascript:;" class="side-menu side-menu{{ ($active_menu == 'nganh_list' || $active_menu == 'nganh_add') ? '--active' : '' }}">
