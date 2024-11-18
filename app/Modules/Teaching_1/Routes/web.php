@@ -4,7 +4,7 @@ use Illuminate\Support\Facades\Route;
 use App\Modules\Teaching_1\Controllers\NganhController;
 use App\Modules\Teaching_1\Controllers\TeacherController;
 use App\Modules\Teaching_1\Controllers\DonviController;
-
+use App\Modules\Teaching_1\Controllers\StudentController;
 
 
 // Nhóm route cho quản lý ngành
@@ -32,4 +32,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.'], function () {
     // Route cho don vi
     Route::resource('donvi', DonviController::class);
 
+});
+Route::middleware('auth')->group(function () {
+    Route::get('students', [StudentController::class, 'index'])->name('student.index');
+    Route::get('students/create', [StudentController::class, 'create'])->name('student.create');
+    Route::post('students', [StudentController::class, 'store'])->name('student.store');
+    Route::get('students/{id}/edit', [StudentController::class, 'edit'])->name('student.edit');
+    Route::put('students/{id}', [StudentController::class, 'update'])->name('student.update');
+    Route::delete('students/{id}', [StudentController::class, 'destroy'])->name('student.destroy');
 });
