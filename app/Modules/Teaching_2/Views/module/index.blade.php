@@ -62,8 +62,7 @@
                         <td class="w-40">
                             <div class="flex">
                                 <div class="w-10 h-10 image-fit zoom-in">
-                                    <img  class="tooltip rounded-full" 
-                                        src="{{($item->photo)}}">
+                                    <img class="tooltip rounded-full" src="{{ $item->photo }}" alt="Hình ảnh học phần">
                                 </div>
                             </div>
                         </td>

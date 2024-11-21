@@ -3,7 +3,7 @@
 
 <div class="content">
     <h2 class="intro-y text-lg font-medium mt-10">
-        Danh sách học phần chưa đăng ký học
+        Danh sách học phần
     </h2>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
@@ -43,8 +43,7 @@
                         <td class="w-40">
                             <div class="flex">
                                 <div class="w-10 h-10 image-fit zoom-in">
-                                    <img  class="tooltip rounded-full" 
-                                        src="{{asset('storage/recommend/'.$item->photo)}}">
+                                    <img class="tooltip rounded-full" src="{{ $item->photo }}" alt="Hình ảnh học phần">
                                 </div>
                             </div>
                         </td>
