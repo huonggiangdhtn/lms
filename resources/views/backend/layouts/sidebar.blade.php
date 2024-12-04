@@ -320,7 +320,7 @@
         </ul>
     </li>
        <!-- eventtype -->
-
+<li>
 {{-- <li>
     <a href="javascript:;" class="side-menu {{($active_menu=='event_list'|| $active_menu=='event_add')?'side-menu--active':''}}">
         <div class="side-menu__icon"> <i data-lucide="calendar"></i> </div> <!-- Thay đổi icon ở đây -->
@@ -346,7 +346,7 @@
 
 </li> --}}
 
-<li>
+
     <a href="javascript:;" class="side-menu side-menu{{($active_menu=='eventtype_list' || $active_menu=='eventtype_add' || $active_menu=='eventtype_edit') ? '--active' : ''}}">
         <div class="side-menu__icon"> <i data-lucide="calendar"></i> </div>
         <div class="side-menu__title">
