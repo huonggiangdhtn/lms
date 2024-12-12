@@ -13,11 +13,12 @@
                 <tr>
                     <th class="whitespace-nowrap">ID</th>
                     <th class="whitespace-nowrap">Mã số sinh viên</th>
+                    <th class="whitespace-nowrap">Tên sinh viên</th> <!-- Thêm cột Tên sinh viên -->
                     <th class="whitespace-nowrap">Khóa</th>
                     <th class="whitespace-nowrap">Đơn vị</th>
                     <th class="whitespace-nowrap">Ngành</th>
-                    <th class="whitespace-nowrap">User ID</th> <!-- Thêm cột User ID -->
-                    <th class="text-center whitespace-nowrap">Trạng thái</th> <!-- Cập nhật cột Trạng thái -->
+                    <th class="whitespace-nowrap">User ID</th>
+                    <th class="text-center whitespace-nowrap">Trạng thái</th>
                     <th class="whitespace-nowrap">Hành động</th>
                 </tr>
             </thead>
@@ -26,6 +27,7 @@
                 <tr class="intro-x">
                     <td>{{ $student->id }}</td>
                     <td><a target="_blank" href="#" class="font-medium whitespace-nowrap">{{ $student->mssv }}</a></td>
+                    <td>{{ $student->name }}</td> <!-- Hiển thị Tên sinh viên -->
                     <td>{{ $student->khoa }}</td>
                     <td>{{ $student->donvi->title ?? 'Chưa xác định' }}</td> <!-- Hiển thị tên đơn vị -->
                     <td>{{ $student->nganh->title ?? 'Chưa xác định' }}</td> <!-- Hiển thị tên ngành -->

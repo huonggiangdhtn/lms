@@ -51,11 +51,31 @@ class StudentController extends Controller
     {
         $this->authorizeFunction("student_add");
 
+        // Validate dữ liệu
         $this->validateRequest($request);
 
+        // Lấy dữ liệu từ form
         $data = $request->all();
-        $data['slug'] = $this->generateUniqueSlug(Str::slug($request->input('mssv')));
 
+        // Tạo user mới
+        $user = \App\Models\User::create([
+            'full_name' => $request->input('name'),
+            'email' => $request->input('mssv') . '@gmail.com',
+            'password' => $request->input('mssv'), 
+            'role' => 'sinhvien',
+            'status' => 'active',
+            'phone' => '1',
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
+
+        // Cập nhật user_id cho student
+        $data['user_id'] = $user->id;
+
+        // Tạo slug từ mssv
+        $data['slug'] = $this->generateUniqueSlug($request->input('mssv') . '-' . now()->timestamp);
+
+        // Tạo mới sinh viên
         $student = Student::create($data);
 
         return $student
@@ -80,29 +100,49 @@ class StudentController extends Controller
         return view('Teaching_1::student.edit', compact('breadcrumb', 'student', 'active_menu', 'donvis', 'nganhs'));
     }
 
-    public function update(Request $request, string $id)
+    public function update(Request $request, $id)
     {
         $this->authorizeFunction("student_edit");
 
-        $student = Student::findOrFail($id);
-        $this->validateRequest($request, $student->id); // Truyền id vào validate
+        // Validate dữ liệu
+        $this->validateRequest($request, $id);
 
+        // Lấy dữ liệu từ form
         $data = $request->all();
-        $data['slug'] = $this->generateUniqueSlug(Str::slug($request->input('mssv')), $student->id);
 
-        $student->fill($data)->save();
+        // Tìm sinh viên và người dùng liên quan
+        $student = Student::findOrFail($id);
+        $user = $student->user;
 
-        return redirect()->route('student.index')->with('success', 'Cập nhật thành công');
+        // Cập nhật slug từ mssv
+        $data['slug'] = $this->generateUniqueSlug($request->input('mssv') . '-' . now()->timestamp, $id);
+
+        // Cập nhật thông tin sinh viên
+        $student->update($data);
+
+        // Cập nhật thông tin user liên quan
+        if ($user) {
+            $user->update([
+                'full_name' => $request->input('name'),
+                'email' => $request->input('mssv') . '@domain.com',
+            ]);
+        }
+
+        return redirect()->route('student.index')->with('success', 'Cập nhật sinh viên thành công!');
     }
 
-    public function destroy(string $id)
+    public function destroy($id)
     {
-        $this->authorizeFunction("student_delete");
-
         $student = Student::findOrFail($id);
+        $user = $student->user;
+
         $student->delete();
 
-        return redirect()->route('student.index')->with('success', 'Xóa sinh viên thành công!');
+        if ($user) {
+            $user->delete();
+        }
+
+        return redirect()->route('student.index')->with('success', 'Sinh viên đã được xóa!');
     }
 
     public function studentStatus(Request $request)
@@ -119,17 +159,17 @@ class StudentController extends Controller
     }
 
     protected function validateRequest(Request $request, $studentId = null)
-    {
-        $request->validate([
-            'mssv' => 'string|required', // Không cần kiểm tra duy nhất cho mssv nữa
-            'donvi_id' => 'numeric|required',
-            'nganh_id' => 'numeric|required',
-            'khoa' => 'string|required',
-            'status' => 'required|in:đang học,thôi học,tốt nghiệp',
-            'user_id' => 'numeric|required|unique:students,user_id,' . $studentId, // Kiểm tra tính duy nhất của user_id
-        ]);
-    }
-
+{
+    $request->validate([
+        'name' => 'string|required|max:255',
+        'mssv' => 'string|required|unique:students,mssv,' . $studentId,
+        'donvi_id' => 'numeric|required',
+        'nganh_id' => 'numeric|required',
+        'khoa' => 'string|required',
+        'status' => 'required|in:đang học,thôi học,tốt nghiệp',
+        
+    ]);
+}
 
     protected function generateUniqueSlug($slug, $existingId = null)
     {
