@@ -42,3 +42,20 @@ Route::group(['namespace' => 'api', 'prefix' => 'v1'], function () {
     Route::post('teacher', [\App\Http\Controllers\Api\AuthenticationController::class, 'createTeacher'])->middleware('auth:api');
 
   });
+
+Route::post('/login', [App\Http\Controllers\Api\ApiTnUserController::class, 'login']);
+Route::post('/register', [App\Http\Controllers\Api\ApiTnUserController::class, 'register']);
+Route::put('update_profile/{id}', [App\Http\Controllers\Api\ApiTnUserController::class, 'updateProfile']);
+
+// học phần
+Route::get('hocphan', [App\Http\Controllers\Api\ApiHocPhanController::class, 'getHocPhan']);
+
+// video
+Route::get('video', [App\Http\Controllers\Api\VideoHocController::class, 'getVideo']);
+
+// trắc nghiệm
+Route::get('bode', [App\Http\Controllers\Api\ApiTracNghiemController::class, 'getBoDeTracNghiem']);
+Route::get('dapan', [App\Http\Controllers\Api\ApiTracNghiemController::class, 'getTracNghiemDapAn']);
+Route::get('cauhoi', [App\Http\Controllers\Api\ApiTracNghiemController::class, 'getTracNghiemCauHoi']);
+Route::post('exam_results', [App\Http\Controllers\Api\ApiTracNghiemController::class, 'storeKetQuaThi']);
+Route::get('exam_results', [App\Http\Controllers\Api\ApiTracNghiemController::class, 'getKetQuaThi']);

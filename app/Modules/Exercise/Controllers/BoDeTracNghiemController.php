@@ -6,12 +6,12 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Illuminate\Support\Facades\Log;
-use App\Modules\Exercise\Models\BodeTracNghiem; 
-use App\Modules\Teaching_2\Models\HocPhan;
+use App\Modules\Exercise\Models\Bodetracnghiem; 
+use App\Modules\Exercise\Models\HocPhan;
 use App\Models\User;
 use App\Modules\Exercise\Models\TracNghiemCauhoi;
 
-class BoDeTracNghiemController extends Controller
+class BodetracnghiemController extends Controller
 {
     protected $pagesize;
 
@@ -21,27 +21,27 @@ class BoDeTracNghiemController extends Controller
         $this->middleware('auth');
     }
 
-    // List all BoDeTracNghiem records
+    // List all Bodetracnghiem records
     public function index()
     {
         $active_menu = "bode_tracnghiem_list";
         $breadcrumb = '<li class="breadcrumb-item"><a href="#">/</a></li>
                        <li class="breadcrumb-item active" aria-current="page">Danh sách bộ đề trắc nghiệm</li>';
 
-        $bodeTracNghiem = BoDeTracNghiem::orderBy('id', 'DESC')->paginate($this->pagesize);
+        $bodetracnghiem = Bodetracnghiem::orderBy('id', 'DESC')->paginate($this->pagesize);
         // Tính số lượng câu hỏi từ JSON
-        $bodeTracNghiem->getCollection()->transform(function ($item) {
-        $questions = json_decode($item->questions, true);
+        $bodetracnghiem->getCollection()->transform(function ($item) {
+        $questions = $item->questions;
         $item->so_cau_hoi = is_array($questions) ? count($questions) : 0; // Đếm số lượng phần tử
         return $item;
     });
         $hocPhanList = HocPhan::pluck('title', 'id')->toArray();
         $userList = User::pluck('full_name', 'id')->toArray();
 
-        return view('Exercise::bode_tracnghiem.index', compact('bodeTracNghiem', 'breadcrumb', 'active_menu', 'hocPhanList', 'userList'));
+        return view('Exercise::bode_tracnghiem.index', compact('bodetracnghiem', 'breadcrumb', 'active_menu', 'hocPhanList', 'userList'));
     }
 
-    // Show the form for creating a new BoDeTracNghiem
+    // Show the form for creating a new Bodetracnghiem
     public function create()
     {
         $active_menu = 'bode_tracnghiem_add';
@@ -56,7 +56,7 @@ class BoDeTracNghiemController extends Controller
     return view('Exercise::bode_tracnghiem.create', compact('cauHois','hocphan', 'users','tags','breadcrumb','active_menu'));
     }
 
-    // Store a new BoDeTracNghiem record
+    // Store a new Bodetracnghiem record
     public function store(Request $request)
     {
         // Validate dữ liệu đầu vào
@@ -93,22 +93,132 @@ class BoDeTracNghiemController extends Controller
         $validatedData['questions'] = json_encode($questions);
     
         // Tạo bộ đề trắc nghiệm
-        $bodeTracNghiem = BoDeTracNghiem::create($validatedData);
+        $bodetracnghiem = Bodetracnghiem::create($validatedData);
     
         // Liên kết tag nếu có
         $tag_ids = $request->tag_ids;
         if (!empty($tag_ids)) {
             $tagservice = new \App\Http\Controllers\TagController();
-            $tagservice->store_bodetracnghiem_tag($bodeTracNghiem->id, $tag_ids);
+            $tagservice->store_Bodetracnghiem_tag($bodetracnghiem->id, $tag_ids);
         }
     
         // Chuyển hướng với thông báo thành công
         return redirect()->route('admin.bode_tracnghiem.index')->with('success', 'Bộ đề trắc nghiệm được tạo thành công.');
     }
+    function createMultipleBode($hocphan_id, $total_points, $number_of_bodes = 10)
+    {
+        $bodes = []; // Mảng lưu danh sách bộ đề đã tạo
     
+        for ($i = 1; $i <= $number_of_bodes; $i++) {
+            // Tạo thông tin bộ đề
+            $title = "Bộ đề tự động #" . $i;
+            $slug = "bo-de-tu-dong-" . $i . "-" . time();
+            $start_time = now()->addDays($i); // Thời gian bắt đầu, mỗi bộ đề cách nhau 1 ngày
+            $end_time = $start_time->copy()->addHours(2); // Thời gian kết thúc
+            $time = 120; // Thời gian làm bài (phút)
+            $tags = "Tự động, Bộ đề #" . $i;
+            $user_id = 1; // ID người tạo (có thể thay đổi)
+    
+            // Lấy danh sách loai_id có câu hỏi thuộc hocphan_id
+            $loaiIds = TracNghiemCauhoi::where('hocphan_id', $hocphan_id)
+                ->distinct()
+                ->pluck('loai_id')
+                ->toArray();
+    
+            $questions = [];
+    
+            // Duyệt qua từng loai_id và lấy 10 câu hỏi ngẫu nhiên
+            foreach ($loaiIds as $loaiId) {
+                $randomQuestions = TracNghiemCauhoi::where('hocphan_id', $hocphan_id)
+                    ->where('loai_id', $loaiId)
+                    ->inRandomOrder()
+                    ->take(10)
+                    ->pluck('id')
+                    ->toArray();
+    
+                $questions = array_merge($questions, $randomQuestions);
+            }
+    
+            // Tính điểm cho từng câu hỏi
+            $numQuestions = count($questions);
+            $questionsWithPoints = [];
+    
+            if ($numQuestions > 0) {
+                $pointsPerQuestion = $total_points / $numQuestions; // Điểm cho mỗi câu hỏi
+    
+                foreach ($questions as $id_question) {
+                    $questionsWithPoints[] = [
+                        'id_question' => $id_question,
+                        'points' => round($pointsPerQuestion, 2), // Làm tròn đến 2 chữ số
+                    ];
+                }
+            }
+    
+            // Tạo bộ đề
+            $bode = TracNghiemBode::create([
+                'title' => $title,
+                'hocphan_id' => $hocphan_id,
+                'slug' => $slug,
+                'start_time' => $start_time,
+                'end_time' => $end_time,
+                'time' => $time,
+                'tags' => $tags,
+                'user_id' => $user_id,
+                'total_points' => $total_points,
+                'questions' => $questionsWithPoints, // Lưu danh sách câu hỏi và điểm tương ứng
+            ]);
+    
+            $bodes[] = $bode; // Thêm vào danh sách bộ đề
+        }
+    
+        return $bodes; // Trả về danh sách các bộ đề đã tạo
+    }
+    
+    function createAutoBodeWithPoints($title, $hocphan_id, $slug, $start_time, $end_time, $time, $tags, $user_id, $total_points)
+    {
+        // Lấy danh sách loai_id có câu hỏi thuộc hocphan_id
+        $loaiIds = TracNghiemCauhoi::where('hocphan_id', $hocphan_id)
+            ->distinct()
+            ->pluck('loai_id')
+            ->toArray();
 
-    // Show a specific BoDeTracNghiem record
-    public function show(BoDeTracNghiem $bode_tracnghiem)
+        $questions = [];
+
+        // Lấy 10 câu hỏi ngẫu nhiên cho mỗi loai_id
+        foreach ($loaiIds as $loaiId) {
+            $randomQuestions = TracNghiemCauhoi::where('hocphan_id', $hocphan_id)
+                ->where('loai_id', $loaiId)
+                ->inRandomOrder()
+                ->take(10)
+                ->pluck('id')
+                ->toArray();
+
+            $questions = array_merge($questions, $randomQuestions);
+        }
+
+        // Tạo bộ đề mới
+        $bode = TracNghiemBode::create([
+            'title' => $title,
+            'hocphan_id' => $hocphan_id,
+            'slug' => $slug,
+            'start_time' => $start_time,
+            'end_time' => $end_time,
+            'time' => $time,
+            'tags' => $tags,
+            'user_id' => $user_id,
+            'total_points' => $total_points,
+            'questions' => $questions, // Tạm lưu danh sách ID câu hỏi
+        ]);
+
+        // Phân phối điểm đều cho từng câu hỏi
+        $bode->distributePoints();
+
+        return $bode;
+    }
+
+
+    // Show a specific Bodetracnghiem record
+    public function show(Bodetracnghiem $bode_tracnghiem)
     {
         $active_menu = 'bode_tracnghiem_show';
 
@@ -121,7 +231,7 @@ class BoDeTracNghiemController extends Controller
     public function edit($id)
     {
         $active_menu = 'bode_tracnghiem_edit';
-        $bodeTracNghiem = BoDeTracNghiem::findOrFail($id);
+        $bodetracnghiem = Bodetracnghiem::findOrFail($id);
         $cauHois = TracNghiemCauHoi::all(); // Lấy tất cả câu hỏi
         $hocphan = HocPhan::all();
         $users = User::all();
@@ -131,10 +241,10 @@ class BoDeTracNghiemController extends Controller
         <li class="breadcrumb-item active" aria-current="page">Chỉnh sửa bộ đề trắc nghiệm</li>';
     
         // Decode questions từ JSON để hiển thị trong form chỉnh sửa
-        $selectedQuestions = json_decode($bodeTracNghiem->questions, true) ?? [];
+        $selectedQuestions = json_decode($bodetracnghiem->questions, true) ?? [];
     
         return view('Exercise::bode_tracnghiem.edit', compact(
-            'bodeTracNghiem',
+            'bodetracnghiem',
             'cauHois',
             'hocphan',
             'users',
@@ -148,7 +258,7 @@ class BoDeTracNghiemController extends Controller
     public function update(Request $request, $id)
     {
         try {
-            $bodeTracNghiem = BoDeTracNghiem::findOrFail($id);
+            $bodetracnghiem = Bodetracnghiem::findOrFail($id);
     
             // Validate dữ liệu đầu vào
             $validatedData = $request->validate([
@@ -185,20 +295,20 @@ class BoDeTracNghiemController extends Controller
             $validatedData['questions'] = json_encode($questions);
     
             // Cập nhật dữ liệu vào DB
-            $bodeTracNghiem->update($validatedData);
+            $bodetracnghiem->update($validatedData);
     
             // Xử lý liên kết tag
             $tag_ids = $request->tag_ids;
             if (!empty($tag_ids)) {
                 $tagservice = new \App\Http\Controllers\TagController();
-                $tagservice->store_bodetracnghiem_tag($bodeTracNghiem->id, $tag_ids);
+                $tagservice->store_Bodetracnghiem_tag($bodetracnghiem->id, $tag_ids);
             }
     
             // Redirect với thông báo thành công
             return redirect()->route('admin.bode_tracnghiem.index')->with('success', 'Bộ đề trắc nghiệm được cập nhật thành công.');
         } catch (\Exception $e) {
             // Log lỗi chi tiết
-            Log::error('Error updating BoDeTracNghiem:', [
+            Log::error('Error updating Bodetracnghiem:', [
                 'message' => $e->getMessage(),
                 'trace' => $e->getTraceAsString(),
             ]);
@@ -210,11 +320,11 @@ class BoDeTracNghiemController extends Controller
     
 
 
-    // Delete a BoDeTracNghiem record
+    // Delete a Bodetracnghiem record
     public function destroy($id)
     {
-        $bodeTracNghiem = BoDeTracNghiem::findOrFail($id);
-        $bodeTracNghiem->delete();
+        $bodetracnghiem = Bodetracnghiem::findOrFail($id);
+        $bodetracnghiem->delete();
 
         return redirect()->route('admin.bode_tracnghiem.index')->with('success', 'Bộ đề trắc nghiệm đã được xóa thành công.');
     }

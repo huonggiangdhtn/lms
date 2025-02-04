@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('tag_tuluancauhois', function (Blueprint $table) {
             $table->id(); 
-            $table->foreignId('tag_id')->constrained('tags')->onDelete('cascade'); // Định nghĩa khóa ngoại      
-            $table->foreignId('tuluancauhoi_id')->constrained('tu_luan_cauhois')->onDelete('cascade'); // Định nghĩa khóa ngoại      
+            $table->foreignId('tag_id') ; // Định nghĩa khóa ngoại      
+            $table->foreignId('tuluancauhoi_id') ; // Định nghĩa khóa ngoại      
             $table->timestamps();
         });
     }

@@ -7,6 +7,11 @@
 @endsection
 
 @section('content')
+<br/>
+<br/>
+<div class="content">
+@include('backend.layouts.notification')
+
     <div class="intro-y flex items-center mt-8">
         <h2 class="text-lg font-medium mr-auto">Thêm câu hỏi trắc nghiệm</h2>
     </div>
@@ -111,6 +116,7 @@
             </form>
         </div>
     </div>
+</div>
 @endsection
 
 @section ('scripts')
@@ -157,7 +163,7 @@ document.addEventListener('click', function (e) {
 <script>
     ClassicEditor.create(document.querySelector('#editor2'), {
         ckfinder: {
-            uploadUrl: '{{ route("admin.upload.ckeditor") }}?_token={{ csrf_token() }}'
+            uploadUrl: '{{ route("upload.ckeditor") }}?_token={{ csrf_token() }}'
         }
     })
     .catch(error => {

@@ -15,13 +15,13 @@ return new class extends Migration
             $table->id();
             $table->string('content');
             // $table->integer('hocphan_id');
-            $table->foreignId('hocphan_id')->constrained('hoc_phans')->onDelete('cascade'); // Định nghĩa khóa ngoại      
+            $table->foreignId('hocphan_id') ; // Định nghĩa khóa ngoại      
             $table->string('tags')->nullable(); // Cho phép giá trị null
             $table->string('resources')->nullable(); // Cho phép giá trị null
             // $table->integer('loai_id');
-            $table->foreignId('loai_id')->constrained('trac_nghiem_loais')->onDelete('cascade'); // Định nghĩa khóa ngoại      
+            $table->foreignId('loai_id') ; // Định nghĩa khóa ngoại      
             // $table->integer('user_id');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // Định nghĩa khóa ngoại      
+            $table->foreignId('user_id') ; // Định nghĩa khóa ngoại      
             $table->timestamps();
 
             // $table->foreign('nganh_id')->references('id')->on('nganh')->onDelete('cascade');

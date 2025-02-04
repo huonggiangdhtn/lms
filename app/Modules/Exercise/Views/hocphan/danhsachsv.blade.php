@@ -1,23 +1,19 @@
 @extends('backend.layouts.master')
 @section('content')
-@include('backend.layouts.notification')
+
 <div class="content">
  
     <h2 class="intro-y text-lg font-medium mt-10">
-        Danh sách câu hỏi trắc nghiệm
+        Danh sách sinh vieen
     </h2>
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-            <a href="{{route('admin.tracnghiemcauhoi.create')}}" class="btn btn-primary shadow-md mr-2">Thêm câu hỏi</a>
+           
             
-            {{-- <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{$hocphan->currentPage()}} trong {{$hocphan->lastPage()}} trang</div> --}}
+            <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{$enrolls->currentPage()}} trong {{$enrolls->lastPage()}} trang</div>
             <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
                 <div class="w-56 relative text-slate-500">
-                    <form action="{{route('admin.hocphan.search')}}" method = "get">
-                        @csrf
-                        <input type="text" name="datasearch" class="ipsearch form-control w-56 box pr-10" placeholder="Seach">
-                        <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-lucide="search"></i> 
-                    </form>
+                    
                 </div>
             </div>
         </div>
@@ -43,38 +39,33 @@
             <table class="table table-report -mt-2">
                 <thead>
                     <tr>
-                        <th class="">CONTENT</th>
-                        <th class="">HỌC PHẦN</th>                        
-                        <th class="">LOẠI TRẮC NGHIỆM</th>
-                        <th class="">NGƯỜI TẠO</th>
-                        <th class="">TRẠNG THÁI</th>
+                        <th class="whitespace-nowrap">Tên</th>
+                        <th class="whitespace-nowrap">Thời gian</th>                        
+                        <th class="whitespace-nowrap">Điểm trắc nghiệm</th>
+                        <th class="whitespace-nowrap">Điểm tự luận</th>
+                        <th class="whitespace-nowrap">TRẠNG THÁI</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($tracnghiemcauhoi as $item)
+                    @foreach($enrolls as $item)
                     <tr class="intro-x">
                         <td>
-                            <p target="_blank" href="" class="font-medium ">{{ strip_tags($item->content) }}</p> 
+                            {{($item->user->full_name)}} 
+                        </td>
+                        
+                        <td>
+                            {{($item->timespending)}} 
                         </td>
                         <td>
-                            <p target="_blank" href="" class="font-medium ">{{ optional($item->hocphan)->title }}</p> 
+                            {{($item->tracnghiem_point)}} 
                         </td>
                         <td>
-                            <p target="_blank" href="" class="font-medium ">{{ optional($item->loaicauhoi)->title }}</p> 
+                            {{($item->tuluan_point)}} 
                         </td>
                         <td>
-                            <p target="_blank" href="" class="font-medium ">{{ optional($item->user)->username }}</p> 
+                           
                         </td>
-                        <td class="table-report__action w-56">
-                            <div class="flex justify-center items-center">
-                                <a href="{{route('admin.tracnghiemcauhoi.edit',$item->id)}}" class="flex items-center mr-3" href="javascript:;"> <i data-lucide="check-square" class="w-4 h-4 mr-1"></i> Edit </a>
-                                <form action="{{route('admin.tracnghiemcauhoi.destroy',$item->id)}}" method = "post">
-                                    @csrf
-                                    @method('DELETE')
-                                    <a class="flex items-center text-danger dltBtn" data-id="{{$item->id}}" href="javascript:;" data-tw-toggle="modal" data-tw-target="#delete-confirmation-modal"> <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Delete </a>
-                                </form>
-                            </div>
-                        </td>
+                    
                     </tr>
 
                     @endforeach
@@ -88,12 +79,12 @@
         <!-- BEGIN: Pagination -->
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-row sm:flex-nowrap items-center">
             <nav class="w-full sm:w-auto sm:mr-auto">
-                {{$tracnghiemcauhoi->links('vendor.pagination.tailwind')}}
+                {{$enrolls->links('vendor.pagination.tailwind')}}
             </nav>
            
         </div>
         <!-- END: Pagination -->
-    </div>
+</div>
 @endsection
 @section('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -150,8 +141,7 @@
             }
         }
     });
-
-    
+ 
     
 </script>
  

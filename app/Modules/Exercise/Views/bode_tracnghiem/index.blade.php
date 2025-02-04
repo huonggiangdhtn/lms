@@ -1,14 +1,15 @@
 @extends('backend.layouts.master')
 @section('content')
-
+<div class="content">
 <h2 class="intro-y text-lg font-medium mt-10">
     Danh sách Bộ Đề Trắc Nghiệm
 </h2>
+
 <div class="grid grid-cols-12 gap-6 mt-5">
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
         <a href="{{ route('admin.bode_tracnghiem.create') }}" class="btn btn-primary shadow-md mr-2">Thêm Bộ Đề</a>
 
-        <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $bodeTracNghiem->currentPage() }} trong {{ $bodeTracNghiem->lastPage() }} trang</div>
+        <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $bodetracnghiem->currentPage() }} trong {{ $bodetracnghiem->lastPage() }} trang</div>
 
         <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
             <div class="w-56 relative text-slate-500">
@@ -34,7 +35,7 @@
                 </tr>
             </thead>
             <tbody>
-                @foreach($bodeTracNghiem as $item)
+                @foreach($bodetracnghiem as $item)
                 <tr class="intro-x">
                     <td>
                         <a href="{{ route('admin.bode_tracnghiem.show', $item->id) }}" class="font-medium whitespace-nowrap">{{ $item->title }}</a>
@@ -66,10 +67,11 @@
     <!-- BEGIN: Pagination -->
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-row sm:flex-nowrap items-center">
         <nav class="w-full sm:w-auto sm:mr-auto">
-            {{ $bodeTracNghiem->links('vendor.pagination.tailwind') }}
+            {{ $bodetracnghiem->links('vendor.pagination.tailwind') }}
         </nav>
     </div>
     <!-- END: Pagination -->
+</div>
 </div>
 @endsection
 

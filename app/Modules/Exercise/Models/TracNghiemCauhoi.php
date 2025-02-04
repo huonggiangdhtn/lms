@@ -6,7 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Modules\Exercise\Models\TracNghiemLoai; 
 use App\Modules\Exercise\Models\TracNghiemDapan; 
-use App\Modules\Teaching_2\Models\HocPhan; // Import model Module
+use App\Modules\Exercise\Models\HocPhan; // Import model Module
 use App\Models\User; // Import model User
 
 class TracNghiemCauhoi extends Model

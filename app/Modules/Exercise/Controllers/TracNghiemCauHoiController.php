@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 use App\Modules\Exercise\Models\TracNghiemLoai;
-use App\Modules\Teaching_2\Models\HocPhan;
+use App\Modules\Exercise\Models\HocPhan;
 use App\Modules\Exercise\Models\TracNghiemCauhoi;
 use App\Modules\Exercise\Models\TracNghiemDapan;
 use App\Models\User; // Import model User
@@ -84,9 +84,9 @@ class TracNghiemCauHoiController extends Controller
         ]);
 
         // Gắn thẻ vào câu hỏi
-        $tag_ids = $request->tag_ids;
-        $tagservice = new \App\Http\Controllers\TagController();
-        $tagservice->store_tracnghiemcauhoi_tag($tracnghiemcauhoi->id, $tag_ids);
+        // $tag_ids = $request->tag_ids;
+        // $tagservice = new \App\Http\Controllers\TagController();
+        // $tagservice->store_tracnghiemcauhoi_tag($tracnghiemcauhoi->id, $tag_ids);
 
         // Xử lý tài nguyên của câu hỏi
         $resourceIds = [];
@@ -114,7 +114,7 @@ class TracNghiemCauHoiController extends Controller
         return redirect()->route('admin.tracnghiemcauhoi.index')->with('success', 'Tạo câu hỏi và đáp án thành công.');
     } catch (\Exception $e) {
         Log::error('Error creating TracNghiemCauHoi:', ['message' => $e->getMessage()]);
-        return back()->with('error', 'Đã xảy ra lỗi khi tạo câu hỏi và đáp án.');
+        return back()->with('error', 'Đã xảy ra lỗi khi tạo câu hỏi và đáp án.'. $e->getMessage());
     }
 }
 
@@ -199,9 +199,9 @@ public function update(Request $request, $id)
     $tracnghiemcauhoi->update($requestData);
 
     // Update tags
-    $tagservice = new \App\Http\Controllers\TagController();
-    $tag_ids = $request->tag_ids;
-    $tagservice->update_tracnghiemcauhoi_tag($tracnghiemcauhoi->id, $tag_ids);
+    // $tagservice = new \App\Http\Controllers\TagController();
+    // $tag_ids = $request->tag_ids;
+    // $tagservice->update_tracnghiemcauhoi_tag($tracnghiemcauhoi->id, $tag_ids);
 
     // Update resources for the question
     $tracnghiemcauhoi->resources = json_encode([

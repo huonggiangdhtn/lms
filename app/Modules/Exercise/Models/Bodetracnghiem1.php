@@ -6,7 +6,7 @@ use App\Modules\Exercise\Models\HocPhan; // Import model Module
 use App\Modules\Exercise\Models\TracNghiemCauhoi;
 use App\Models\User; // Import model User
 
-class Bodetracnghiem extends Model
+class Bodetracnghiem1 extends Model
 {
     use HasFactory;
 
@@ -69,7 +69,7 @@ class Bodetracnghiem extends Model
     public static function createNextBode($hocphan_id, $total_points,$user_id)
     {
         // Lấy số thứ tự tiếp theo của bộ đề
-        $latestBode = Bodetracnghiem::where('hocphan_id', $hocphan_id)->orderBy('id', 'desc')->first();
+        $latestBode = Bodetracnghiem1::where('hocphan_id', $hocphan_id)->orderBy('id', 'desc')->first();
         $nextIndex = $latestBode ? $latestBode->id + 1 : 1;
 
         // Tạo thông tin bộ đề
@@ -77,7 +77,7 @@ class Bodetracnghiem extends Model
         $slug = "bo-de-tu-dong-" . $nextIndex . "-" . time();
         $start_time = now(); // Thời gian bắt đầu là hiện tại
         $end_time = $start_time->copy()->addHours(2); // Thời gian kết thúc
-        $time = 60; // Thời gian làm bài (phút)
+        $time = 120; // Thời gian làm bài (phút)
         $tags = "Tự động, Bộ đề #" . $nextIndex;
         $user_id = 1; // ID người tạo (có thể thay đổi)
 
@@ -94,7 +94,7 @@ class Bodetracnghiem extends Model
             $randomQuestions = TracNghiemCauhoi::where('hocphan_id', $hocphan_id)
                 ->where('loai_id', $loaiId)
                 ->inRandomOrder()
-                ->take(5)
+                ->take(10)
                 ->pluck('id')
                 ->toArray();
 
@@ -117,7 +117,7 @@ class Bodetracnghiem extends Model
         }
 
         // Tạo bộ đề
-        $bode = Bodetracnghiem::create([
+        $bode = Bodetracnghiem1::create([
             'title' => $title,
             'hocphan_id' => $hocphan_id,
             'slug' => $slug,

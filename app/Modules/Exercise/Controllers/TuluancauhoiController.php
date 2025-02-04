@@ -80,10 +80,10 @@ class TuLuanCauHoiController extends Controller
         ]);
 
         // Gắn thẻ vào câu hỏi
-        if ($tag_ids) {
-            $tagservice = new \App\Http\Controllers\TagController();
-            $tagservice->store_tuluancauhoi_tag($tuluancauhoi->id, $tag_ids);
-        }
+        // if ($tag_ids) {
+        //     $tagservice = new \App\Http\Controllers\TagController();
+        //     $tagservice->store_tuluancauhoi_tag($tuluancauhoi->id, $tag_ids);
+        // }
 
         // Xử lý tài liệu đính kèm
         $resourceIds = [];
@@ -200,9 +200,9 @@ class TuLuanCauHoiController extends Controller
         // Cập nhật dữ liệu vào cơ sở dữ liệu
         $tuluancauhoi->update($requestData);
 
-        $tagservice = new \App\Http\Controllers\TagController();
-        $tag_ids = $request->tag_ids;
-        $tagservice->update_tuluancauhoi_tag($tuluancauhoi->id,$tag_ids);
+        // $tagservice = new \App\Http\Controllers\TagController();
+        // $tag_ids = $request->tag_ids;
+        // $tagservice->update_tuluancauhoi_tag($tuluancauhoi->id,$tag_ids);
 
         // Save updated resources
         $tuluancauhoi->resources = json_encode([

@@ -16,7 +16,7 @@
     <div class="intro-y col-span-12 lg:col-span-12">
         <!-- BEGIN: Form Layout -->
 
-        <form method="post" action="{{ route('admin.bode_tracnghiem.update', $bodeTracNghiem->id) }}">
+        <form method="post" action="{{ route('admin.bode_tracnghiem.update', $bodetracnghiem->id) }}">
             @csrf
             @method('patch')
             <div class="intro-y box p-5">
@@ -24,7 +24,7 @@
                 <div class="mt-3">
                     <label for="title" class="form-label">Tiêu đề</label>
                     <input type="text" name="title" id="title" class="form-control" 
-                           value="{{ old('title', $bodeTracNghiem->title) }}" required>
+                           value="{{ old('title', $bodetracnghiem->title) }}" required>
                 </div>
 
                 <!-- Học phần -->
@@ -33,7 +33,7 @@
                     <select name="hocphan_id" id="hocphan_id" class="form-select">
                         @foreach($hocphan as $hoc_phan)
                             <option value="{{ $hoc_phan->id }}" 
-                                    {{ $hoc_phan->id == $bodeTracNghiem->hocphan_id ? 'selected' : '' }}>
+                                    {{ $hoc_phan->id == $bodetracnghiem->hocphan_id ? 'selected' : '' }}>
                                 {{ $hoc_phan->title }}
                             </option>
                         @endforeach
@@ -44,7 +44,7 @@
                     <label for="user_id" class="form-label">Người tạo</label>
                     <select name="user_id" id="user_id" class="form-select mt-2">
                         @foreach($users as $data)
-                            <option value="{{ $data->id }}" {{ $data->id == old('user_id', $bodeTracNghiem->user_id) ? 'selected' : '' }}>
+                            <option value="{{ $data->id }}" {{ $data->id == old('user_id', $bodetracnghiem->user_id) ? 'selected' : '' }}>
                                 {{ $data->username }}
                             </option>
                         @endforeach
@@ -56,28 +56,28 @@
                 <div class="mt-3">
                     <label for="start_time" class="form-label">Thời gian bắt đầu</label>
                     <input type="datetime-local" name="start_time" id="start_time" class="form-control" 
-                           value="{{ old('start_time', \Carbon\Carbon::parse($bodeTracNghiem->start_time)->format('Y-m-d\TH:i')) }}" required>
+                           value="{{ old('start_time', \Carbon\Carbon::parse($bodetracnghiem->start_time)->format('Y-m-d\TH:i')) }}" required>
                 </div>
 
                 <!-- Thời gian kết thúc -->
                 <div class="mt-3">
                     <label for="end_time" class="form-label">Thời gian kết thúc</label>
                     <input type="datetime-local" name="end_time" id="end_time" class="form-control" 
-                           value="{{ old('end_time', \Carbon\Carbon::parse($bodeTracNghiem->end_time)->format('Y-m-d\TH:i')) }}" required>
+                           value="{{ old('end_time', \Carbon\Carbon::parse($bodetracnghiem->end_time)->format('Y-m-d\TH:i')) }}" required>
                 </div>
 
                 <!-- Thời lượng -->
                 <div class="mt-3">
                     <label for="time" class="form-label">Thời lượng (phút)</label>
                     <input type="number" name="time" id="time" class="form-control" 
-                           value="{{ old('time', $bodeTracNghiem->time) }}" required>
+                           value="{{ old('time', $bodetracnghiem->time) }}" required>
                 </div>
 
                 <!-- Tổng điểm -->
                 <div class="mt-3">
                     <label for="total_points" class="form-label">Tổng điểm</label>
                     <input type="number" name="total_points" id="total_points" class="form-control" 
-                           value="{{ old('total_points', $bodeTracNghiem->total_points) }}" required>
+                           value="{{ old('total_points', $bodetracnghiem->total_points) }}" required>
                 </div>
 
                 <div class="mt-3">
