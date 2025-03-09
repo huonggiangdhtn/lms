@@ -58,6 +58,8 @@ Route::group(['namespace' => 'api', 'prefix' => 'v1'], function () {
     Route::post('/questions', [\App\Http\Controllers\Api\ExerciseController::class, 'storeQuestion']);
     Route::post('/answers', [\App\Http\Controllers\Api\ExerciseController::class, 'storeAnswer']);
     Route::post('/quiz', [\App\Http\Controllers\Api\ExerciseController::class, 'storeQuiz']);
+    Route::get('/question-types', [\App\Http\Controllers\Api\ExerciseController::class, 'getQuestionTypes']);
+    Route::get('/getQuestions', [\App\Http\Controllers\Api\ExerciseController::class, 'getQuestionsByHocphan']);
 
 
     //Course

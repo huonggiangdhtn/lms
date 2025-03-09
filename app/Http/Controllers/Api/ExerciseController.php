@@ -1,103 +1,189 @@
 <?php
-
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use App\Modules\Exercise\Models\BodeTracNghiem;
 use App\Modules\Exercise\Models\TracNghiemCauhoi;
 use App\Modules\Exercise\Models\TracNghiemDapan;
+use App\Modules\Exercise\Models\BodeTracNghiem;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Carbon\Carbon;
 use Illuminate\Support\Str;
+use Carbon\Carbon;
 
 class ExerciseController extends Controller
 {
-    // Tạo câu hỏi trắc nghiệm
-    public function storeQuestion(Request $request) {
+    /**
+     * Tạo câu hỏi trắc nghiệm
+     */
+    public function storeQuestion(Request $request)
+    {
         $request->validate([
-            'content' => 'required|string',
+            'content' => 'required|string|max:1000',
             'hocphan_id' => 'required|integer|exists:hoc_phans,id',
-            'resources' => 'nullable|array',  // Kiểm tra resources là một mảng
-            'resources.tracnghiem_id' => 'required_with:resources|integer',
-            'resources.resource_ids' => 'required_with:resources|array',
-            'resources.resource_ids.*' => 'integer', // Kiểm tra từng phần tử trong mảng
-            'loai_id' => 'required|integer',
+            'resources' => 'nullable|array',
+            'resources.*' => 'integer|exists:resources,id',
+            'loai_id' => 'required|integer|exists:trac_nghiem_loais,id',
+            'user_id' => 'required|integer|exists:users,id', // Thêm user_id vào validation
         ]);
 
-        // Chuyển `resources` thành JSON nếu có
-        $resourcesJson = $request->has('resources') ? json_encode($request->resources) : null;
+        try {
+            $question = TracNghiemCauhoi::create([
+                'content' => $request->content,
+                'hocphan_id' => $request->hocphan_id,
+                'resources' => $request->resources ? json_encode($request->resources) : null,
+                'loai_id' => $request->loai_id,
+                'user_id' => $request->user_id, // Lấy từ body request
+            ]);
 
-        $question = TracNghiemCauhoi::create([
-            'content' => $request->content,
-            'hocphan_id' => $request->hocphan_id,
-            'resources' => $resourcesJson,
-            'loai_id' => $request->loai_id,
-            'user_id' =>  $request->user_id
-        ]);
-
-        if (!$question) {
-            return response()->json(['success' => false, 'message' => 'Không thể tạo câu hỏi'], 500);
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo câu hỏi thành công',
+                'data' => $question,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo câu hỏi: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'data' => $question]);
     }
 
-    // Tạo đáp án
-    public function storeAnswer(Request $request) {
+    /**
+     * Tạo đáp án cho câu hỏi trắc nghiệm
+     */
+    public function storeAnswer(Request $request)
+    {
         $request->validate([
             'tracnghiem_id' => 'required|integer|exists:trac_nghiem_cauhois,id',
-            'content' => 'required|string',
-            'resounce_list' => 'nullable|string',
+            'content' => 'required|string|max:500',
+            'resounce_list' => 'nullable|array',
+            'resounce_list.*' => 'integer|exists:resources,id',
             'is_correct' => 'required|boolean',
         ]);
 
-        $answer = TracNghiemDapan::create([
-            'tracnghiem_id' => $request->tracnghiem_id,
-            'content' => $request->content,
-            'resounce_list' => $request->resounce_list,
-            'is_correct' => $request->is_correct,
-        ]);
+        try {
+            $answer = TracNghiemDapan::create([
+                'tracnghiem_id' => $request->tracnghiem_id,
+                'content' => $request->content,
+                'resounce_list' => $request->resounce_list ? json_encode($request->resounce_list) : null,
+                'is_correct' => $request->is_correct,
+            ]);
 
-        if (!$answer) {
-            return response()->json(['success' => false, 'message' => 'Không thể tạo đáp án'], 500);
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo đáp án thành công',
+                'data' => $answer,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo đáp án: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'data' => $answer]);
     }
 
-    // Tạo đề thi trắc nghiệm
-    public function storeQuiz(Request $request) {
+    /**
+     * Tạo đề thi trắc nghiệm
+     */
+    public function storeQuiz(Request $request)
+    {
         $request->validate([
-            'title' => 'required|string',
+            'title' => 'required|string|max:255',
             'hocphan_id' => 'required|integer|exists:hoc_phans,id',
-            'start_time' => 'required|date',
+            'start_time' => 'required|date|after:now',
             'end_time' => 'required|date|after:start_time',
-            'time' => 'required|integer',
-            'tags' => 'nullable|string',
-            'total_points' => 'required|integer',
-            'questions' => 'required|array', // Kiểm tra questions là mảng
+            'time' => 'required|integer|min:1',
+            'tags' => 'nullable|string|max:255',
+            'total_points' => 'required|integer|min:1',
+            'questions' => 'required|array|min:1',
             'questions.*.id_question' => 'required|integer|exists:trac_nghiem_cauhois,id',
-            'questions.*.points' => 'required|integer',
+            'questions.*.points' => 'required|integer|min:1',
+            'user_id' => 'required|integer|exists:users,id', // Thêm user_id vào validation
         ]);
 
-        $quiz = BodeTracNghiem::create([
-            'title' => $request->title,
-            'hocphan_id' => $request->hocphan_id,
-            'slug' => Str::slug($request->title),
-            'start_time' => Carbon::parse($request->start_time),
-            'end_time' => Carbon::parse($request->end_time),
-            'time' => $request->time,
-            'tags' => $request->tags,
-            'user_id' =>   $request->user_id,
-            'total_points' => $request->total_points,
-            'questions' => json_encode($request->questions), // Chuyển thành JSON
-        ]);
+        try {
+            $calculatedTotal = collect($request->questions)->sum('points');
+            if ($calculatedTotal != $request->total_points) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Tổng điểm của các câu hỏi không khớp với total_points',
+                ], 400);
+            }
 
-        if (!$quiz) {
-            return response()->json(['success' => false, 'message' => 'Không thể tạo đề thi'], 500);
+            $quiz = BodeTracNghiem::create([
+                'title' => $request->title,
+                'hocphan_id' => $request->hocphan_id,
+                'slug' => Str::slug($request->title . '-' . time()),
+                'start_time' => Carbon::parse($request->start_time),
+                'end_time' => Carbon::parse($request->end_time),
+                'time' => $request->time,
+                'tags' => $request->tags,
+                'user_id' => $request->user_id, // Lấy từ body request
+                'total_points' => $request->total_points,
+                'questions' => json_encode($request->questions),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Tạo đề thi thành công',
+                'data' => $quiz,
+            ], 201);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi tạo đề thi: ' . $e->getMessage(),
+            ], 500);
         }
-
-        return response()->json(['success' => true, 'data' => $quiz]);
     }
+
+    /**
+     * Lấy danh sách câu hỏi theo học phần
+     */
+    public function getQuestionsByHocphan(Request $request)
+    {
+        $request->validate([
+            'hocphan_id' => 'required|integer|exists:hoc_phans,id',
+            'user_id' => 'required|integer|exists:users,id', // Thêm user_id vào validation nếu cần lọc
+        ]);
+
+        try {
+            $questions = TracNghiemCauhoi::where('hocphan_id', $request->hocphan_id)
+                ->where('user_id', $request->user_id) // Lọc theo user_id từ request
+                ->with(['answers' => function ($query) {
+                    $query->select('id', 'tracnghiem_id', 'content', 'is_correct');
+                }])
+                ->get(['id', 'content', 'hocphan_id', 'loai_id']);
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Danh sách câu hỏi trắc nghiệm',
+                'data' => $questions,
+            ], 200);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Lỗi khi lấy danh sách câu hỏi: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+
+    /**
+ * Lấy danh sách loại câu hỏi
+ */
+public function getQuestionTypes(Request $request)
+{
+    try {
+        $types = \App\Modules\Exercise\Models\TracNghiemLoai::all(['id', 'title']);
+        
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách loại câu hỏi',
+            'data' => $types,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi khi lấy danh sách loại câu hỏi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }

@@ -330,6 +330,7 @@ public function getTeacherSchedule(Request $request)
                 'thoi_khoa_bieus.id as timetable_id',
                 'phancong.id as phancong_id',
                 'hoc_phans.title as subject',
+                'phancong.hocphan_id as hocphan_id',
                 'thoi_khoa_bieus.buoi',
                 'thoi_khoa_bieus.ngay',
                 'thoi_khoa_bieus.tietdau',
@@ -482,7 +483,7 @@ public function getStudentsByTeacher(Request $request)
     }
 
     try {
-        // Truy vấn danh sách sinh viên theo giảng viên và học phần
+        // Truy vấn danh sách sinh viên
         $students = DB::table('enrollments')
             ->join('phancong', 'enrollments.phancong_id', '=', 'phancong.id')
             ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
@@ -494,13 +495,39 @@ public function getStudentsByTeacher(Request $request)
                 'users.full_name as student_name',
                 'users.email as student_email',
                 'hoc_phans.title as subject',
+                'hoc_phans.id as hocphan_id',
                 'hoc_phans.code as subject_code',
                 'classes.class_name as class_name'
             )
             ->where('phancong.giangvien_id', $request->teacher_id)
-            ->where('phancong.id', $request->phancong_id) // Thêm điều kiện lọc theo học phần
+            ->where('phancong.id', $request->phancong_id)
             ->orderBy('students.id', 'asc')
             ->get();
+
+        // Lấy danh sách tkb_id từ thoi_khoa_bieus cho phancong_id này
+        $tkbIds = DB::table('thoi_khoa_bieus')
+            ->where('phancong_id', $request->phancong_id)
+            ->pluck('id')
+            ->toArray();
+
+        // Đếm số buổi vắng cho từng sinh viên
+        $attendanceData = DB::table('attendances')
+            ->whereIn('tkb_id', $tkbIds)
+            ->whereNotNull('student_list') // Chỉ lấy các phiên đã có dữ liệu
+            ->get()
+            ->map(function ($attendance) {
+                $studentList = json_decode($attendance->student_list, true);
+                return $studentList['absent'] ?? [];
+            })
+            ->flatten()
+            ->countBy()
+            ->all();
+
+        // Thêm số buổi vắng vào danh sách sinh viên
+        $students = $students->map(function ($student) use ($attendanceData) {
+            $student->absent_count = $attendanceData[$student->student_id] ?? 0;
+            return $student;
+        });
 
         return response()->json([
             'success' => true,
@@ -514,7 +541,6 @@ public function getStudentsByTeacher(Request $request)
         ], 500);
     }
 }
-
 
 
 }

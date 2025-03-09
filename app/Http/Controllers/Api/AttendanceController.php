@@ -206,76 +206,75 @@ class AttendanceController extends Controller
 
     // Lấy danh sách điểm danh
     public function getAttendanceBySchedule(Request $request)
-{
-    $request->validate([
-        'tkb_id' => 'required|integer',
-    ]);
-
-    try {
-        $attendance = DB::table('attendances')
-            ->where('tkb_id', $request->tkb_id)
-            ->first();
-
-        if ($attendance) {
-            $studentList = json_decode($attendance->student_list, true);
-            $presentIds = $studentList['present'] ?? [];
-            $absentIds = $studentList['absent'] ?? [];
-            $studentIds = array_merge($presentIds, $absentIds);
-
-            $studentData = [];
-            if (!empty($studentIds)) {
-                $studentData = DB::table('students')
-                    ->join('users', 'students.user_id', '=', 'users.id')
-                    ->whereIn('students.id', $studentIds)
-                    ->select('students.id', 'students.mssv', 'users.full_name')
-                    ->get()
-                    ->map(function ($student) use ($presentIds, $absentIds) {
-                        return [
-                            'student_id' => $student->id,
-                            'mssv'       => $student->mssv,
-                            'full_name'  => $student->full_name,
-                            'status'     => in_array($student->id, $presentIds) ? 'present' : 'absent',
-                        ];
-                    })->toArray();
+    {
+        $request->validate([
+            'tkb_id' => 'required|integer',
+        ]);
+    
+        try {
+            $attendance = DB::table('attendances')
+                ->where('tkb_id', $request->tkb_id)
+                ->first();
+    
+            if ($attendance) {
+                $studentList = json_decode($attendance->student_list, true);
+                $presentIds = $studentList['present'] ?? [];
+                $absentIds = $studentList['absent'] ?? [];
+                $studentIds = array_merge($presentIds, $absentIds);
+    
+                $studentData = [];
+                if (!empty($studentIds)) {
+                    $studentData = DB::table('students')
+                        ->join('users', 'students.user_id', '=', 'users.id')
+                        ->whereIn('students.id', $studentIds)
+                        ->select('students.id', 'students.mssv', 'users.full_name')
+                        ->get()
+                        ->map(function ($student) use ($presentIds, $absentIds) {
+                            return [
+                                'student_id' => $student->id,
+                                'mssv'       => $student->mssv,
+                                'full_name'  => $student->full_name,
+                                'status'     => in_array($student->id, $presentIds) ? 'present' : 'absent',
+                            ];
+                        })->toArray();
+                }
+    
+                $currentTime = Carbon::now();
+                $endTime = Carbon::parse($attendance->end_time);
+                $isOpen = $currentTime->lessThanOrEqualTo($endTime); // Chỉ kiểm tra thời gian
+    
+                $qrData = $attendance->qr_token ? json_encode([
+                    'tkb_id'    => $attendance->tkb_id,
+                    'qr_token'  => $attendance->qr_token,
+                    'end_time'  => $attendance->end_time,
+                ]) : null;
+    
+                return response()->json([
+                    'success' => true,
+                    'data' => [
+                        'id'           => $attendance->id,
+                        'tkb_id'       => $attendance->tkb_id,
+                        'student_list' => $studentData,
+                        'start_time'   => $attendance->start_time,
+                        'end_time'     => $attendance->end_time,
+                        'absent_count' => $attendance->absent_count,
+                        'is_open'      => $isOpen,
+                        'qr_data'      => $qrData,
+                        'created_at'   => $attendance->created_at,
+                        'updated_at'   => $attendance->updated_at,
+                    ]
+                ], 200);
+            } else {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Không tìm thấy điểm danh',
+                ], 404);
             }
-
-            $currentTime = Carbon::now();
-            $endTime = Carbon::parse($attendance->end_time);
-            $isOpen = $currentTime->lessThanOrEqualTo($endTime) && $attendance->absent_count === 0;
-
-            // Tạo qr_data giống như trong startAttendance
-            $qrData = json_encode([
-                'tkb_id'    => $attendance->tkb_id,
-                'qr_token'  => $attendance->qr_token,
-                'end_time'  => $attendance->end_time,
-            ]);
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'id'           => $attendance->id,
-                    'tkb_id'       => $attendance->tkb_id,
-                    'student_list' => $studentData,
-                    'start_time'   => $attendance->start_time,
-                    'end_time'     => $attendance->end_time,
-                    'absent_count' => $attendance->absent_count,
-                    'is_open'      => $isOpen,
-                    'qr_data'      => $qrData, // Thêm qr_data vào response
-                    'created_at'   => $attendance->created_at,
-                    'updated_at'   => $attendance->updated_at,
-                ]
-            ], 200);
-        } else {
+        } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Không tìm thấy điểm danh',
-            ], 404);
+                'message' => 'Lỗi khi lấy dữ liệu điểm danh: ' . $e->getMessage(),
+            ], 500);
         }
-    } catch (\Exception $e) {
-        return response()->json([
-            'success' => false,
-            'message' => 'Lỗi khi lấy dữ liệu điểm danh: ' . $e->getMessage(),
-        ], 500);
     }
-}
 }
