@@ -19,19 +19,11 @@ return new class extends Migration
             $table->unsignedBigInteger('enroll_id'); // Foreign key to enrollments table
             $table->foreign('enroll_id')->references('id')->on('enrollments')->onDelete('cascade');
 
-            $table->unsignedBigInteger('user_id'); // Foreign key to users table
-            $table->foreign('user_id')->references('id')->on('users')->onDelete('cascade');
+            $table->unsignedBigInteger('student_id'); // Foreign key to users table
+            $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
 
-            $table->unsignedBigInteger('hinhthucthi_id'); // Foreign key to hinh_thuc_this table
-            $table->foreign('hinhthucthi_id')->references('id')->on('hinh_thuc_this')->onDelete('cascade');
-
-            // Polymorphic relationship for bode
-            // $table->string('bode_type'); // To store the type of the bode (bo_de_trac_nghiems or bo_de_tu_luans)
-            $table->unsignedBigInteger('bode_id'); // To store the ID of the related bode
-
-            $table->decimal('grade', 5, 2)->nullable(); // Grade, e.g., 95.50
-
-            $table->json('chitiet')->nullable(); // JSON field for detailed answers
+            $table->decimal('diem30', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('diem70', 5, 2)->nullable(); // Grade, e.g., 95.50
 
             $table->timestamps(); // created_at and updated_at
         });

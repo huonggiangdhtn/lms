@@ -1,49 +1,38 @@
 <?php
 
-namespace app\Modules\Teaching_3\Models;
+namespace App\Modules\Teaching_3\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use App\Models\User; // Import model User
-use App\Modules\Teaching_2\Models\HinhThucThi;
-
+use App\Modules\Teaching_3\Models\Enrollment;
+use App\Modules\Teaching_1\Models\Student;
+use app\Modules\Teaching_3\Models\Enrollment as ModelsEnrollment;
 
 class EnrollResult extends Model
 {
-    //
     use HasFactory;
 
     protected $fillable = [
         'enroll_id',
-        'user_id',
-        'hinhthucthi_id',
-        'bode_type',
-        'bode_id',
-        'grade',
-        'chitiet',
+        'student_id',
+        'diem30',
+        'diem70',
     ];
 
     /**
-     * Polymorphic relationship with BoDeTuLuan and BoDeTracNghiem.
+     * Relationship with Enrollment.
      */
-
-    public function user()
-    {
-        return $this->belongsTo(User::class, 'user_id');
-    }
-
     public function enrollment()
     {
-        return $this->belongsTo(User::class, 'enroll_id');
+        return $this->belongsTo(Enrollment::class, 'enroll_id');
     }
 
-    public function hinhthucthi()
+    /**
+     * Relationship with Student.
+     */
+    public function student()
     {
-        return $this->belongsTo(HinhThucThi::class, 'hinhthucthi_id');
-    }
-
-    public function bode()
-    {
-        return $this->morphTo();
+        return $this->belongsTo(Student::class, 'student_id');
     }
 }
+

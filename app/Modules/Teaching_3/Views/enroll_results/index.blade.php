@@ -1,4 +1,5 @@
 @extends('backend.layouts.master')
+
 @section('content')
 
 <h2 class="intro-y text-lg font-medium mt-10">
@@ -8,7 +9,7 @@
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
         <a href="{{ route('admin.enroll_results.create') }}" class="btn btn-primary shadow-md mr-2">Thêm Kết Quả</a>
 
-        <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $enrollResult->currentPage() }} trong {{ $enrollResult->lastPage() }} trang</div>
+        <div class="hidden md:block mx-auto text-slate-500">Hiển thị trang {{ $enrollResults->currentPage() }} trong {{ $enrollResults->lastPage() }} trang</div>
 
         <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
             <div class="w-56 relative text-slate-500">
@@ -28,18 +29,20 @@
                 <tr>
                     <th class="whitespace-nowrap">ID</th>
                     <th class="whitespace-nowrap">Sinh viên</th>
-                    <th class="whitespace-nowrap">Hình Thức Thi</th>
-                    <th class="whitespace-nowrap">Điểm</th>
+                    <th class="whitespace-nowrap">Khóa học</th>
+                    <th class="whitespace-nowrap">Điểm 30%</th>
+                    <th class="whitespace-nowrap">Điểm 70%</th>
                     <th class="text-center whitespace-nowrap">Hành Động</th>
                 </tr>
             </thead>
             <tbody>
-                @foreach($enrollResult as $item)
+                @foreach($enrollResults as $item)
                 <tr class="intro-x">
                     <td>{{ $item->id }}</td>
-                    <td>{{ $userList[$item->user_id] ?? 'N/A' }}</td>
-                    <td>{{ $hocthucthi[$item->hinhthucthi_id] ?? 'N/A' }}</td>
-                    <td>{{ $item->grade ?? 'Chưa có' }}</td>
+                    <td>{{ $item->student->user->full_name ?? 'N/A' }}</td>
+                    <td>{{ $item->enrollment->phancong_id ?? 'N/A' }}</td>
+                    <td>{{ $item->diem30 ?? 'Chưa có' }}</td>
+                    <td>{{ $item->diem70 ?? 'Chưa có' }}</td>
                     <td class="table-report__action w-56">
                         <div class="flex justify-center items-center">
                             <a href="{{ route('admin.enroll_results.edit', $item->id) }}" class="flex items-center mr-3"> 
@@ -64,7 +67,7 @@
     <!-- BEGIN: Pagination -->
     <div class="intro-y col-span-12 flex flex-wrap sm:flex-row sm:flex-nowrap items-center">
         <nav class="w-full sm:w-auto sm:mr-auto">
-            {{ $enrollResult->links('vendor.pagination.tailwind') }}
+            {{ $enrollResults->links('vendor.pagination.tailwind') }}
         </nav>
     </div>
     <!-- END: Pagination -->
