@@ -900,5 +900,25 @@
             </li>
         </ul>
     </li>
+    <!-- Nội dung phân công -->
+    <li>
+        <a href="javascript:;" class="side-menu {{($active_menu=='noidungphancong'|| $active_menu=='noidungphancong_add')?'side-menu--active':''}}">
+            <div class="side-menu__icon"><i data-lucide="clock"></i>
+                <!-- Biểu tượng phù hợp cho điểm danh -->
+            </div>
+            <div class="side-menu__title">
+                Nội dung phân công
+                <div class="side-menu__sub-icon transform"> <i data-lucide="chevron-down"></i> </div>
+            </div>
+        </a>
+        <ul class="{{($active_menu==''|| $active_menu=='')?'side-menu__sub-open':''}}">
+            <li> 
+                <a href="{{route('admin.noidung_phancong.index')}}" class="side-menu {{$active_menu=='noidungphancong'?'side-menu--active':''}}">
+                    <div class="side-menu__icon"> <i data-lucide="list"></i> </div>
+                    <div class="side-menu__title">Danh sách nội dung</div>
+                </a>
+            </li>
+        </ul>
+    </li>
     </ul>
 </nav>
