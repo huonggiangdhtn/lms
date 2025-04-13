@@ -3,7 +3,8 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
-use app\Modules\Teaching_3\Models\Enrollment;
+use App\Models\User;
+use App\Modules\Teaching_3\Models\Enrollment;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
@@ -181,6 +182,8 @@ public function getEnrolledCourses(Request $request)
         ->join('users', 'teacher.user_id', '=', 'users.id')
         ->select(
             'enrollments.id as enrollment_id',
+            'phancong.id as phancong_id',
+            'hoc_phans.id as hocphan_id',
             'hoc_phans.title as title',
             'hoc_phans.tinchi as tinchi',
             'hoc_phans.code as course_code',
@@ -542,5 +545,813 @@ public function getStudentsByTeacher(Request $request)
     }
 }
 
+public function updateEnrollmentStatus(Request $request)
+{
+    try {
+        // Validate dữ liệu đầu vào
+        $data = $request->validate([
+            'user_id' => 'required|integer',
+            'enrollment_id' => 'required|integer|exists:enrollments,id',
+            'status' => 'required|string|in:pending,success,finished,rejected', // Các trạng thái hợp lệ
+        ]);
 
+        // Kiểm tra quyền (giả định chỉ giảng viên mới được thay đổi trạng thái)
+        $teacher = User::find($data['user_id']);
+        if (!$teacher || $teacher->role !== 'teacher') {
+            return response()->json(['success' => false, 'message' => 'Bạn không có quyền thay đổi trạng thái'], 403);
+        }
+
+        // Tìm bản ghi enrollment
+        $enrollment = Enrollment::find($data['enrollment_id']);
+        if (!$enrollment) {
+            return response()->json(['success' => false, 'message' => 'Bản ghi đăng ký không tồn tại'], 404);
+        }
+
+        // Cập nhật trạng thái
+        $enrollment->status = $data['status'];
+        $enrollment->save();
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Cập nhật trạng thái thành công',
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi khi cập nhật trạng thái: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+
+public function updateStudentScores(Request $request, $studentId, $hocphanId)
+{
+    // Validate dữ liệu đầu vào
+    $request->validate([
+        'DiemBP' => 'required|numeric|min:0|max:10',
+        'Thi1' => 'nullable|numeric|min:0|max:10',
+        'Thi2' => 'nullable|numeric|min:0|max:10',
+    ]);
+
+    try {
+        // Lấy dữ liệu từ request
+        $DiemBP = $request->input('DiemBP');
+        $Thi1 = $request->input('Thi1');
+        $Thi2 = $request->input('Thi2');
+
+        // Tính toán điểm
+        $Diem1 = null;
+        $Diem2 = null;
+        $DiemMax = null;
+        $DiemChu = null;
+        $DiemHeSo4 = null;
+
+        // Tính Diem1 nếu có Thi1
+        if ($Thi1 !== null) {
+            $Diem1 = round(($DiemBP * 0.3) + ($Thi1 * 0.7), 1);
+        }
+
+        // Tính Diem2 nếu có Thi2
+        if ($Thi2 !== null) {
+            $Diem2 = round(($DiemBP * 0.3) + ($Thi2 * 0.7), 1);
+        }
+
+        // Tính DiemMax
+        if ($Diem1 !== null && $Diem2 !== null) {
+            $DiemMax = max($Diem1, $Diem2);
+        } elseif ($Diem1 !== null) {
+            $DiemMax = $Diem1;
+        } elseif ($Diem2 !== null) {
+            $DiemMax = $Diem2;
+        }
+
+        // Kiểm tra xem học phần có phải là học phần điều kiện không
+        $isConditionCourse = DB::table('hoc_phans')
+            ->where('id', $hocphanId)
+            ->value('is_condition_course');
+
+        // Tính DiemChu và DiemHeSo4
+        if ($DiemMax !== null) {
+            if ($isConditionCourse) {
+                // Nếu là học phần điều kiện
+                if ($DiemMax >= 5.0) {
+                    $DiemChu = 'P'; // Đạt
+                    $DiemHeSo4 = null; // Không tính vào GPA
+                } else {
+                    $DiemChu = 'F'; // Không đạt
+                    $DiemHeSo4 = null; // Không tính vào GPA
+                }
+            } else {
+                // Nếu là học phần bình thường, tính như cũ
+                list($DiemChu, $DiemHeSo4) = $this->calculateGrade($DiemMax);
+            }
+        }
+
+        // Tìm enroll_id dựa trên student_id và hocphan_id
+        $enrollId = DB::table('enrollments')
+            ->join('phancong', 'enrollments.phancong_id', '=', 'phancong.id')
+            ->where('enrollments.student_id', $studentId)
+            ->where('phancong.hocphan_id', $hocphanId)
+            ->value('enrollments.id');
+
+        if (!$enrollId) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy bản ghi đăng ký học phần cho sinh viên này',
+            ], 404);
+        }
+
+        // Cập nhật hoặc thêm mới vào cơ sở dữ liệu
+        DB::table('enroll_results')
+            ->updateOrInsert(
+                [
+                    'enroll_id' => $enrollId,
+                ],
+                [
+                    'student_id' => $studentId,
+                    'DiemBP' => $DiemBP,
+                    'Thi1' => $Thi1,
+                    'Diem1' => $Diem1,
+                    'Thi2' => $Thi2,
+                    'Diem2' => $Diem2,
+                    'DiemMax' => $DiemMax,
+                    'DiemChu' => $DiemChu,
+                    'DiemHeSo4' => $DiemHeSo4,
+                    'updated_at' => now(),
+                ]
+            );
+
+        // Trả về response
+        return response()->json([
+            'success' => true,
+            'message' => 'Điểm đã được cập nhật và tính toán thành công',
+            'data' => [
+                'DiemBP' => $DiemBP,
+                'Thi1' => $Thi1,
+                'Diem1' => $Diem1,
+                'Thi2' => $Thi2,
+                'Diem2' => $Diem2,
+                'DiemMax' => $DiemMax,
+                'DiemChu' => $DiemChu,
+                'DiemHeSo4' => $DiemHeSo4,
+            ],
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+/**
+ * Tính điểm chữ và điểm hệ số 4 dựa trên điểm tối đa (DiemMax)
+ *
+ * @param float $diemMax Điểm tối đa
+ * @return array [DiemChu, DiemHeSo4]
+ */
+private function calculateGrade($diemMax)
+{
+    if ($diemMax >= 8.5) {
+        return ['A', 4.0];
+    } elseif ($diemMax >= 7.0) {
+        return ['B', 3.0];
+    } elseif ($diemMax >= 5.5) {
+        return ['C', 2.0];
+    } elseif ($diemMax >= 4.0) {
+        return ['D', 1.0];
+    } else {
+        return ['F', 0.0];
+    }
+}
+
+public function getStudentScores($studentId, $hocphanId)
+{
+    try {
+        // Truy vấn điểm của sinh viên theo studentId và hocphanId
+        $scores = DB::table('enroll_results')
+            ->join('enrollments', 'enroll_results.enroll_id', '=', 'enrollments.id')
+            ->join('phancong', 'enrollments.phancong_id', '=', 'phancong.id')
+            ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
+            ->select(
+                'hoc_phans.title as hocphan_title',
+                'hoc_phans.tinchi as so_tin_chi',
+                'hoc_phans.is_condition_course', // Thêm trường is_condition_course
+                'phancong.hocphan_id',
+                'enroll_results.DiemBP',
+                'enroll_results.Thi1',
+                'enroll_results.Diem1',
+                'enroll_results.Thi2',
+                'enroll_results.Diem2',
+                'enroll_results.DiemMax',
+                'enroll_results.DiemChu',
+                'enroll_results.DiemHeSo4'
+            )
+            ->where('enroll_results.student_id', $studentId)
+            ->where('phancong.hocphan_id', $hocphanId) // Thêm điều kiện lọc theo hocphanId
+            ->get();
+
+        if ($scores->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không có bản ghi điểm nào cho sinh viên này trong học phần này',
+            ], 404);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Danh sách điểm của sinh viên',
+            'data' => $scores,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
+// /**
+//      * API: Lấy thông tin tiến độ học tập của sinh viên
+//      * GET /student-progress/{studentId}
+//      */
+//     public function getStudentProgress($studentId)
+//     {
+//         try {
+//             // Bước 1: Lấy nganh_id của sinh viên từ bảng students
+//             $student = DB::table('students')
+//                 ->where('id', $studentId)
+//                 ->select('nganh_id')
+//                 ->first();
+
+//             if (!$student) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Không tìm thấy sinh viên với ID này',
+//                 ], 404);
+//             }
+
+//             $nganhId = $student->nganh_id;
+
+//             // Bước 2: Lấy tổng số tín chỉ yêu cầu từ bảng chuong_trinh_dao_tao
+//             $program = DB::table('chuong_trinh_dao_tao')
+//                 ->where('nganh_id', $nganhId)
+//                 ->where('status', 1) // Chỉ lấy chương trình đang hoạt động
+//                 ->select('tong_tin_chi')
+//                 ->first();
+
+//             if (!$program) {
+//                 return response()->json([
+//                     'success' => false,
+//                     'message' => 'Không tìm thấy chương trình đào tạo cho ngành này',
+//                 ], 404);
+//             }
+
+//             $requiredCredits = $program->tong_tin_chi;
+
+//             // Bước 3: Lấy danh sách học phần đã đăng ký của sinh viên
+//             $enrolledCourses = DB::table('enrollments')
+//                 ->join('phancong', 'enrollments.phancong_id', '=', 'phancong.id')
+//                 ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
+//                 ->select(
+//                     'hoc_phans.id as hocphan_id',
+//                     'hoc_phans.title as hocphan_title',
+//                     'hoc_phans.tinchi as so_tin_chi',
+//                     'enrollments.id as enroll_id'
+//                 )
+//                 ->where('enrollments.student_id', $studentId)
+//                 ->get();
+
+//             if ($enrolledCourses->isEmpty()) {
+//                 return response()->json([
+//                     'success' => true,
+//                     'message' => 'Sinh viên chưa đăng ký học phần nào',
+//                     'data' => [
+//                         'total_credits_completed' => 0,
+//                         'total_credits' => 0,
+//                         'gpa' => 0.0,
+//                         'progress_percentage' => 0.0,
+//                         'required_credits' => $requiredCredits,
+//                         'courses' => [],
+//                     ],
+//                 ], 200);
+//             }
+
+//             // Bước 4: Lấy điểm của sinh viên và tính toán
+//             $progressData = [];
+//             $totalCreditsCompleted = 0;
+//             $totalWeightedScore = 0;
+//             $totalCredits = 0;
+
+//             foreach ($enrolledCourses as $course) {
+//                 $hocphanId = $course->hocphan_id;
+//                 $enrollId = $course->enroll_id;
+
+//                 // Lấy điểm của học phần
+//                 $score = DB::table('enroll_results')
+//                     ->where('enroll_id', $enrollId)
+//                     ->where('student_id', $studentId)
+//                     ->select('DiemMax', 'DiemChu', 'DiemHeSo4')
+//                     ->first();
+
+//                 $credits = $course->so_tin_chi;
+//                 $diemHeSo4 = $score ? (float)$score->DiemHeSo4 : null;
+//                 $diemChu = $score ? $score->DiemChu : null;
+
+//                 // Kiểm tra học phần đã hoàn thành (có điểm và không rớt - DiemChu != "F")
+//                 $isCompleted = $score && $diemChu && $diemChu !== 'F';
+
+//                 if ($isCompleted) {
+//                     $totalCreditsCompleted += $credits;
+//                     if ($diemHeSo4 !== null) {
+//                         $totalWeightedScore += $diemHeSo4 * $credits;
+//                     }
+//                 }
+//                 $totalCredits += $credits;
+
+//                 $progressData[] = [
+//                     'hocphan_id' => $hocphanId,
+//                     'title' => $course->hocphan_title,
+//                     'so_tin_chi' => $credits,
+//                     'diem_he_so_4' => $diemHeSo4,
+//                     'diem_chu' => $diemChu,
+//                     'is_completed' => $isCompleted,
+//                 ];
+//             }
+
+//             // Bước 5: Tính GPA (điểm trung bình tích lũy)
+//             $gpa = $totalCreditsCompleted > 0 ? $totalWeightedScore / $totalCreditsCompleted : 0.0;
+
+//             // Bước 6: Tính tiến độ hoàn thành
+//             $progressPercentage = $requiredCredits > 0 ? ($totalCreditsCompleted / $requiredCredits) * 100 : 0.0;
+
+//             // Bước 7: Trả về kết quả
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Thông tin tiến độ học tập của sinh viên',
+//                 'data' => [
+//                     'total_credits_completed' => $totalCreditsCompleted,
+//                     'total_credits' => $totalCredits,
+//                     'gpa' => $gpa,
+//                     'progress_percentage' => $progressPercentage,
+//                     'required_credits' => $requiredCredits,
+//                     'courses' => $progressData,
+//                 ],
+//             ], 200);
+//         } catch (\Exception $e) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Lỗi: ' . $e->getMessage(),
+//             ], 500);
+//         }
+//     }
+
+//     /**
+//      * API: Lấy thông tin thống kê và báo cáo cho giảng viên
+//      * GET /teacher-report/{teacherId}
+//      */
+//     public function getTeacherReport($teacherId)
+//     {
+//         try {
+//             // Bước 1: Lấy danh sách học phần mà giảng viên phụ trách
+//             $courses = DB::table('phancong')
+//                 ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
+//                 ->select(
+//                     'phancong.id as phancong_id',
+//                     'hoc_phans.id as hocphan_id',
+//                     'hoc_phans.title as hocphan_title',
+//                     'hoc_phans.tinchi as so_tin_chi'
+//                 )
+//                 ->where('phancong.giangvien_id', $teacherId) // Sửa teacher_id thành giangvien_id
+//                 ->get();
+
+//             if ($courses->isEmpty()) {
+//                 return response()->json([
+//                     'success' => true,
+//                     'message' => 'Giảng viên chưa phụ trách học phần nào',
+//                     'data' => [
+//                         'total_courses' => 0,
+//                         'total_students' => 0,
+//                         'pass_rate' => 0.0,
+//                         'average_score' => 0.0,
+//                         'courses' => [],
+//                     ],
+//                 ], 200);
+//             }
+
+//             $totalStudents = 0;
+//             $totalPassedStudents = 0;
+//             $totalWeightedScore = 0;
+//             $totalScoredStudents = 0;
+//             $courseReports = [];
+
+//             // Bước 2: Lấy thông tin sinh viên và điểm cho từng học phần
+//             foreach ($courses as $course) {
+//                 $phancongId = $course->phancong_id;
+//                 $hocphanId = $course->hocphan_id;
+
+//                 // Lấy danh sách sinh viên trong học phần
+//                 $students = DB::table('enrollments')
+//                     ->join('students', 'enrollments.student_id', '=', 'students.id')
+//                     ->join('users', 'students.user_id', '=', 'users.id') // Join với bảng users
+//                     ->join('classes', 'students.class_id', '=', 'classes.id')
+//                     ->select(
+//                         'students.id as student_id',
+//                         'users.full_name as student_name', // Lấy full_name từ bảng users
+//                         'classes.class_name as class_name'
+//                     )
+//                     ->where('enrollments.phancong_id', $phancongId)
+//                     ->get();
+
+//                 $courseStudents = [];
+//                 $coursePassedStudents = 0;
+//                 $courseWeightedScore = 0;
+//                 $courseScoredStudents = 0;
+
+//                 foreach ($students as $student) {
+//                     $studentId = $student->student_id;
+
+//                     // Lấy điểm của sinh viên
+//                     $score = DB::table('enroll_results')
+//                         ->where('student_id', $studentId)
+//                         ->where('enroll_id', function ($query) use ($studentId, $phancongId) {
+//                             $query->select('id')
+//                                 ->from('enrollments')
+//                                 ->where('student_id', $studentId)
+//                                 ->where('phancong_id', $phancongId)
+//                                 ->first();
+//                         })
+//                         ->select('DiemBP', 'Thi1', 'Thi2', 'DiemMax', 'DiemChu', 'DiemHeSo4')
+//                         ->first();
+
+//                     $diemHeSo4 = $score ? (float)$score->DiemHeSo4 : null;
+//                     $diemChu = $score ? $score->DiemChu : null;
+
+//                     // Kiểm tra sinh viên có đạt không
+//                     $isPassed = $score && $diemChu && $diemChu !== 'F';
+
+//                     if ($isPassed) {
+//                         $coursePassedStudents++;
+//                         $totalPassedStudents++;
+//                     }
+//                     if ($diemHeSo4 !== null) {
+//                         $courseWeightedScore += $diemHeSo4;
+//                         $courseScoredStudents++;
+//                         $totalWeightedScore += $diemHeSo4;
+//                         $totalScoredStudents++;
+//                     }
+
+//                     $courseStudents[] = [
+//                         'student_id' => $studentId,
+//                         'student_name' => $student->student_name, // Sử dụng student_name từ full_name
+//                         'class_name' => $student->class_name,
+//                         'diem_bp' => $score ? $score->DiemBP : null,
+//                         'thi_1' => $score ? $score->Thi1 : null,
+//                         'thi_2' => $score ? $score->Thi2 : null,
+//                         'diem_max' => $score ? $score->DiemMax : null,
+//                         'diem_chu' => $diemChu,
+//                         'diem_he_so_4' => $diemHeSo4,
+//                         'is_passed' => $isPassed,
+//                     ];
+//                 }
+
+//                 $totalStudents += count($students);
+
+//                 // Tính toán cho học phần
+//                 $coursePassRate = count($students) > 0 ? ($coursePassedStudents / count($students)) * 100 : 0.0;
+//                 $courseAverageScore = $courseScoredStudents > 0 ? $courseWeightedScore / $courseScoredStudents : 0.0;
+
+//                 $courseReports[] = [
+//                     'phancong_id' => $phancongId,
+//                     'hocphan_id' => $hocphanId,
+//                     'title' => $course->hocphan_title,
+//                     'so_tin_chi' => $course->so_tin_chi,
+//                     'total_students' => count($students),
+//                     'passed_students' => $coursePassedStudents,
+//                     'pass_rate' => $coursePassRate,
+//                     'average_score' => $courseAverageScore,
+//                     'students' => $courseStudents,
+//                 ];
+//             }
+
+//             // Bước 3: Tính toán tổng quan
+//             $totalPassRate = $totalStudents > 0 ? ($totalPassedStudents / $totalStudents) * 100 : 0.0;
+//             $totalAverageScore = $totalScoredStudents > 0 ? $totalWeightedScore / $totalScoredStudents : 0.0;
+
+//             // Bước 4: Trả về kết quả
+//             return response()->json([
+//                 'success' => true,
+//                 'message' => 'Báo cáo thống kê cho giảng viên',
+//                 'data' => [
+//                     'total_courses' => count($courses),
+//                     'total_students' => $totalStudents,
+//                     'pass_rate' => $totalPassRate,
+//                     'average_score' => $totalAverageScore,
+//                     'courses' => $courseReports,
+//                 ],
+//             ], 200);
+//         } catch (\Exception $e) {
+//             return response()->json([
+//                 'success' => false,
+//                 'message' => 'Lỗi: ' . $e->getMessage(),
+//             ], 500);
+//         }
+//     }
+
+/**
+ * API: Lấy thông tin tiến độ học tập của sinh viên
+ * GET /student-progress/{studentId}
+ */
+public function getStudentProgress($studentId)
+{
+    try {
+        // Bước 1: Lấy nganh_id của sinh viên từ bảng students
+        $student = DB::table('students')
+            ->where('id', $studentId)
+            ->select('nganh_id')
+            ->first();
+
+        if (!$student) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy sinh viên với ID này',
+            ], 404);
+        }
+
+        $nganhId = $student->nganh_id;
+
+        // Bước 2: Lấy tổng số tín chỉ yêu cầu từ bảng chuong_trinh_dao_tao
+        $program = DB::table('chuong_trinh_dao_tao')
+            ->where('nganh_id', $nganhId)
+            ->where('status', 1) // Chỉ lấy chương trình đang hoạt động
+            ->select('tong_tin_chi')
+            ->first();
+
+        if (!$program) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Không tìm thấy chương trình đào tạo cho ngành này',
+            ], 404);
+        }
+
+        $requiredCredits = $program->tong_tin_chi;
+
+        // Bước 3: Lấy danh sách học phần đã đăng ký của sinh viên
+        $enrolledCourses = DB::table('enrollments')
+            ->join('phancong', 'enrollments.phancong_id', '=', 'phancong.id')
+            ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
+            ->select(
+                'hoc_phans.id as hocphan_id',
+                'hoc_phans.title as hocphan_title',
+                'hoc_phans.tinchi as so_tin_chi',
+                'hoc_phans.is_condition_course', // Thêm trường is_condition_course
+                'enrollments.id as enroll_id'
+            )
+            ->where('enrollments.student_id', $studentId)
+            ->get();
+
+        if ($enrolledCourses->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Sinh viên chưa đăng ký học phần nào',
+                'data' => [
+                    'total_credits_completed' => 0,
+                    'total_credits' => 0,
+                    'gpa' => 0.0,
+                    'progress_percentage' => 0.0,
+                    'required_credits' => $requiredCredits,
+                    'courses' => [],
+                ],
+            ], 200);
+        }
+
+        // Bước 4: Lấy điểm của sinh viên và tính toán
+        $progressData = [];
+        $totalCreditsCompleted = 0;
+        $totalWeightedScore = 0;
+        $totalCreditsForGPA = 0; // Tổng tín chỉ dùng để tính GPA (bỏ qua học phần điều kiện)
+        $totalCredits = 0;
+
+        foreach ($enrolledCourses as $course) {
+            $hocphanId = $course->hocphan_id;
+            $enrollId = $course->enroll_id;
+            $isConditionCourse = $course->is_condition_course;
+
+            // Lấy điểm của học phần
+            $score = DB::table('enroll_results')
+                ->where('enroll_id', $enrollId)
+                ->where('student_id', $studentId)
+                ->select('DiemMax', 'DiemChu', 'DiemHeSo4')
+                ->first();
+
+            $credits = $course->so_tin_chi;
+            $diemHeSo4 = $score ? (float)$score->DiemHeSo4 : null;
+            $diemChu = $score ? $score->DiemChu : null;
+
+            // Kiểm tra học phần đã hoàn thành (có điểm và không rớt - DiemChu != "F")
+            $isCompleted = $score && $diemChu && $diemChu !== 'F';
+
+            if ($isCompleted) {
+                $totalCreditsCompleted += $credits; // Tín chỉ hoàn thành vẫn tính cả học phần điều kiện
+                if (!$isConditionCourse && $diemHeSo4 !== null) {
+                    // Chỉ tính GPA cho học phần không phải điều kiện
+                    $totalWeightedScore += $diemHeSo4 * $credits;
+                    $totalCreditsForGPA += $credits;
+                }
+            }
+            $totalCredits += $credits;
+
+            $progressData[] = [
+                'hocphan_id' => $hocphanId,
+                'title' => $course->hocphan_title,
+                'so_tin_chi' => $credits,
+                'diem_he_so_4' => $diemHeSo4,
+                'diem_chu' => $diemChu,
+                'is_completed' => $isCompleted,
+                'is_condition_course' => $isConditionCourse, // Trả về thông tin học phần điều kiện
+            ];
+        }
+
+        // Bước 5: Tính GPA (điểm trung bình tích lũy)
+        $gpa = $totalCreditsForGPA > 0 ? $totalWeightedScore / $totalCreditsForGPA : 0.0;
+
+        // Bước 6: Tính tiến độ hoàn thành
+        $progressPercentage = $requiredCredits > 0 ? ($totalCreditsCompleted / $requiredCredits) * 100 : 0.0;
+
+        // Bước 7: Trả về kết quả
+        return response()->json([
+            'success' => true,
+            'message' => 'Thông tin tiến độ học tập của sinh viên',
+            'data' => [
+                'total_credits_completed' => $totalCreditsCompleted,
+                'total_credits' => $totalCredits,
+                'gpa' => $gpa,
+                'progress_percentage' => $progressPercentage,
+                'required_credits' => $requiredCredits,
+                'courses' => $progressData,
+            ],
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+/**
+ * API: Lấy thông tin thống kê và báo cáo cho giảng viên
+ * GET /teacher-report/{teacherId}
+ */
+public function getTeacherReport($teacherId)
+{
+    try {
+        // Bước 1: Lấy danh sách học phần mà giảng viên phụ trách
+        $courses = DB::table('phancong')
+            ->join('hoc_phans', 'phancong.hocphan_id', '=', 'hoc_phans.id')
+            ->select(
+                'phancong.id as phancong_id',
+                'hoc_phans.id as hocphan_id',
+                'hoc_phans.title as hocphan_title',
+                'hoc_phans.tinchi as so_tin_chi',
+                'hoc_phans.is_condition_course' // Thêm trường is_condition_course
+            )
+            ->where('phancong.giangvien_id', $teacherId)
+            ->get();
+
+        if ($courses->isEmpty()) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Giảng viên chưa phụ trách học phần nào',
+                'data' => [
+                    'total_courses' => 0,
+                    'total_students' => 0,
+                    'pass_rate' => 0.0,
+                    'average_score' => 0.0,
+                    'courses' => [],
+                ],
+            ], 200);
+        }
+
+        $totalStudents = 0;
+        $totalPassedStudents = 0;
+        $totalWeightedScore = 0;
+        $totalScoredStudents = 0;
+        $courseReports = [];
+
+        // Bước 2: Lấy thông tin sinh viên và điểm cho từng học phần
+        foreach ($courses as $course) {
+            $phancongId = $course->phancong_id;
+            $hocphanId = $course->hocphan_id;
+            $isConditionCourse = $course->is_condition_course;
+
+            // Lấy danh sách sinh viên trong học phần
+            $students = DB::table('enrollments')
+                ->join('students', 'enrollments.student_id', '=', 'students.id')
+                ->join('users', 'students.user_id', '=', 'users.id')
+                ->join('classes', 'students.class_id', '=', 'classes.id')
+                ->select(
+                    'students.id as student_id',
+                    'users.full_name as student_name',
+                    'classes.class_name as class_name'
+                )
+                ->where('enrollments.phancong_id', $phancongId)
+                ->get();
+
+            $courseStudents = [];
+            $coursePassedStudents = 0;
+            $courseWeightedScore = 0;
+            $courseScoredStudents = 0;
+
+            foreach ($students as $student) {
+                $studentId = $student->student_id;
+
+                // Lấy điểm của sinh viên
+                $score = DB::table('enroll_results')
+                    ->where('student_id', $studentId)
+                    ->where('enroll_id', function ($query) use ($studentId, $phancongId) {
+                        $query->select('id')
+                            ->from('enrollments')
+                            ->where('student_id', $studentId)
+                            ->where('phancong_id', $phancongId)
+                            ->first();
+                    })
+                    ->select('DiemBP', 'Thi1', 'Thi2', 'DiemMax', 'DiemChu', 'DiemHeSo4')
+                    ->first();
+
+                $diemHeSo4 = $score ? (float)$score->DiemHeSo4 : null;
+                $diemChu = $score ? $score->DiemChu : null;
+
+                // Kiểm tra sinh viên có đạt không
+                $isPassed = $score && $diemChu && $diemChu !== 'F';
+
+                if ($isPassed) {
+                    $coursePassedStudents++;
+                    $totalPassedStudents++;
+                }
+                if (!$isConditionCourse && $diemHeSo4 !== null) {
+                    // Chỉ tính điểm trung bình cho học phần không phải điều kiện
+                    $courseWeightedScore += $diemHeSo4;
+                    $courseScoredStudents++;
+                    $totalWeightedScore += $diemHeSo4;
+                    $totalScoredStudents++;
+                }
+
+                $courseStudents[] = [
+                    'student_id' => $studentId,
+                    'student_name' => $student->student_name,
+                    'class_name' => $student->class_name,
+                    'diem_bp' => $score ? $score->DiemBP : null,
+                    'thi_1' => $score ? $score->Thi1 : null,
+                    'thi_2' => $score ? $score->Thi2 : null,
+                    'diem_max' => $score ? $score->DiemMax : null,
+                    'diem_chu' => $diemChu,
+                    'diem_he_so_4' => $diemHeSo4,
+                    'is_passed' => $isPassed,
+                    'is_condition_course' => $isConditionCourse, // Thêm thông tin học phần điều kiện
+                ];
+            }
+
+            $totalStudents += count($students);
+
+            // Tính toán cho học phần
+            $coursePassRate = count($students) > 0 ? ($coursePassedStudents / count($students)) * 100 : 0.0;
+            $courseAverageScore = $courseScoredStudents > 0 ? $courseWeightedScore / $courseScoredStudents : 0.0;
+
+            $courseReports[] = [
+                'phancong_id' => $phancongId,
+                'hocphan_id' => $hocphanId,
+                'title' => $course->hocphan_title,
+                'so_tin_chi' => $course->so_tin_chi,
+                'is_condition_course' => $isConditionCourse, // Thêm thông tin học phần điều kiện
+                'total_students' => count($students),
+                'passed_students' => $coursePassedStudents,
+                'pass_rate' => $coursePassRate,
+                'average_score' => $courseAverageScore,
+                'students' => $courseStudents,
+            ];
+        }
+
+        // Bước 3: Tính toán tổng quan
+        $totalPassRate = $totalStudents > 0 ? ($totalPassedStudents / $totalStudents) * 100 : 0.0;
+        $totalAverageScore = $totalScoredStudents > 0 ? $totalWeightedScore / $totalScoredStudents : 0.0;
+
+        // Bước 4: Trả về kết quả
+        return response()->json([
+            'success' => true,
+            'message' => 'Báo cáo thống kê cho giảng viên',
+            'data' => [
+                'total_courses' => count($courses),
+                'total_students' => $totalStudents,
+                'pass_rate' => $totalPassRate,
+                'average_score' => $totalAverageScore,
+                'courses' => $courseReports,
+            ],
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi: ' . $e->getMessage(),
+        ], 500);
+    }
+}
 }

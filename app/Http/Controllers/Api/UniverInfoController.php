@@ -85,6 +85,25 @@ public function classes(Request $request)
     }
 }
 
+public function getclasses(Request $request) 
+{
+    try {
+        $teacherId = $request->input('teacher_id');
+
+        $classes = \App\Modules\Teaching_1\Models\ClassModel::where('teacher_id', $teacherId)->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $classes,
+        ], 200);
+    } catch (\Exception $e) {
+        return response()->json([
+            'success' => false,
+            'message' => 'Lỗi khi lấy danh sách lớp: ' . $e->getMessage(),
+        ], 500);
+    }
+}
+
 // Lấy danh sách phân công theo giangvien_id
 public function phancong(Request $request)
 {
@@ -104,6 +123,7 @@ public function phancong(Request $request)
             ->join('users', 'teacher.user_id', '=', 'users.id')
             ->select(
                 'phancong.id as phancong_id',
+                'hoc_phans.id as hocphan_id',
                 'hoc_phans.title as hocphan_title',
                 'hoc_phans.tinchi as tinchi',
                 'hoc_phans.code as hocphan_code',

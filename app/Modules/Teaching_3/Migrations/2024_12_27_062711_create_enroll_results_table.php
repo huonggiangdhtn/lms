@@ -22,8 +22,14 @@ return new class extends Migration
             $table->unsignedBigInteger('student_id'); // Foreign key to users table
             $table->foreign('student_id')->references('id')->on('students')->onDelete('cascade');
 
-            $table->decimal('diem30', 5, 2)->nullable(); // Grade, e.g., 95.50
-            $table->decimal('diem70', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('DiemBP', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('Thi1', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('Diem1', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('Thi2', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('Diem2', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->decimal('DiemMax', 5, 2)->nullable(); // Grade, e.g., 95.50
+            $table->string('DiemChu')->nullable();
+            $table->integer('DiemHeSo4')->nullable(); // Grade, e.g., 95.50
 
             $table->timestamps(); // created_at and updated_at
         });
