@@ -15,8 +15,14 @@ class EnrollResult extends Model
     protected $fillable = [
         'enroll_id',
         'student_id',
-        'diem30',
-        'diem70',
+        'DiemBP',
+        'Thi1',
+        'Diem1',
+        'Thi2',
+        'Diem2',
+        'DiemMax',
+        'DiemChu',
+        'DiemHeSo4',
     ];
 
     /**
