@@ -1,7 +1,11 @@
 <?php
 
 namespace Database\Seeders;
+
+use App\Modules\Event\Models\EventType;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
+
  
 // use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
@@ -15,7 +19,7 @@ class DatabaseSeeder extends Seeder
     {
         // User::factory(10)->create();
 
-        \DB::table('setting_details')->insert([
+        DB::table('setting_details')->insert([
             [   
                 'company_name'=>"Tên công ty",
                 'web_title'=>"Tên công ty",
@@ -23,7 +27,7 @@ class DatabaseSeeder extends Seeder
                 'address'=>'Ywang Buôn Ma Thuột, Đăk Lăk',
             ],
         ]);
-        \DB::table('users')->insert([
+        DB::table('users')->insert([
             [
                 'full_name'=>"admin",
                 "username"=>"admin",
@@ -32,7 +36,7 @@ class DatabaseSeeder extends Seeder
                 "role"=>"admin",
                 "phone"=>"111111111",
                 'status'=>'active',
-
+                'code' => '21103118',
             ], 
             [
                 'full_name'=>"manager",
@@ -42,7 +46,7 @@ class DatabaseSeeder extends Seeder
                 "role"=>"manager",
                 "phone"=>"111111119",
                 'status'=>'active',
-
+                'code' => '21103119',
             ],
             
             [
@@ -53,7 +57,7 @@ class DatabaseSeeder extends Seeder
                 "role"=>"giangvien",
                 "phone"=>"111111118",
                 'status'=>'active',
-
+                'code' => '21103120',
             ],
             [
                 'full_name'=>"sinhvien",
@@ -63,11 +67,11 @@ class DatabaseSeeder extends Seeder
                 "role"=>"giangvien",
                 "phone"=>"111111117",
                 'status'=>'active',
-
+                'code' => '21103121',
             ],
 
         ]);
-        \DB::table('roles')->insert([
+        DB::table('roles')->insert([
             [   
                 'alias'=>'admin',
                 'title'=>"Quản trị viên",
@@ -94,6 +98,16 @@ class DatabaseSeeder extends Seeder
                 'title'=>"soft",
                 'status'=>'active',
             ],
+        ]);
+
+        $this->call([
+            HinhThucThiSeeder::class,
+            ResourceSeeder::class,
+            DonviSeeder::class,
+            ChuyennganhSeeder::class,
+            NganhSeeder::class,
+            EventTypeSeeder::class,
+            LoaiTracNghiemSeeder::class,
         ]);
     }
 }

@@ -89,6 +89,328 @@ class TagController extends Controller
         }
     }
 
+    // làm về trắc nghiệm câu hỏi
+    public function store_tracnghiemcauhoi_tag($tracnghiemcauhoi_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['tracnghiemcauhoi_id'] = $tracnghiemcauhoi_id;
+            \App\Modules\Exercise\Models\TagTracNghiemCauHoi::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+     // làm về trắc nghiệm câu hỏi
+     public function store_tuluancauhoi_tag($tuluancauhoi_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['tuluancauhoi_id'] = $tuluancauhoi_id;
+            \App\Modules\Exercise\Models\TagTuLuanCauHoi::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+     // làm về trắc nghiệm câu hỏi
+     public function store_diadiem_tag($thoikhoabieu_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['diadiems_id'] = $thoikhoabieu_id;
+            \App\Models\TagDiadiem::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+    public function update_diadiem_tag($thoikhoabieu_id,$tag_ids)
+    {
+        $sql = "delete from tag_diadiems where diadiems_id = ".$thoikhoabieu_id;
+        DB::select($sql);
+         $this->store_diadiem_tag($thoikhoabieu_id,$tag_ids);
+    }
+
+    public function update_tracnghiemcauhoi_tag($tracnghiemcauhoi_id,$tag_ids)
+    {
+        $sql = "delete from tag_tracnghiemcauhois where tracnghiemcauhoi_id = ".$tracnghiemcauhoi_id;
+        DB::select($sql);
+         $this->store_tracnghiemcauhoi_tag($tracnghiemcauhoi_id,$tag_ids);
+    }
+    
+    public function update_tuluancauhoi_tag($tuluancauhoi_id,$tag_ids)
+    {
+        $sql = "delete from tag_tuluancauhois where tuluancauhoi_id = ".$tuluancauhoi_id;
+        DB::select($sql);
+         $this->store_tuluancauhoi_tag($tuluancauhoi_id,$tag_ids);
+    }
+
+    // làm về bộ đề trắc nghiệm câu hỏi
+    public function store_bodetracnghiem_tag($bodetracnghiem_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['bodetracnghiem_id'] = $bodetracnghiem_id;
+            \App\Modules\Exercise\Models\TagBoDeTracNghiem::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+    public function update_bodetracnghiem_tag($bodetracnghiem_id,$tag_ids)
+    {
+        $sql = "delete from tag_tracnghiemcauhois where bodetracnghiem_id = ".$bodetracnghiem_id;
+        DB::select($sql);
+         $this->store_bodetracnghiem_tag($bodetracnghiem_id,$tag_ids);
+    }
+
+    // làm về bộ đề tự luận câu hỏi
+    public function store_bodetuluan_tag($bodetuluan_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['bodetuluan_id'] = $bodetuluan_id;
+            \App\Modules\Exercise\Models\TagBoDeTuLuan::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+    // làm về nội dung phan cong
+    public function store_noidungphancong_tag($noidungPhancong_id,$tag_ids){
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['noidungPhancong_id'] = $noidungPhancong_id;
+            \App\Modules\Exercise\Models\NoidungPhancong::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+    public function update_bodetuluan_tag($bodetuluan_id,$tag_ids)
+    {
+        $sql = "delete from tag_tracnghiemcauhois where bodetuluan_id = ".$bodetuluan_id;
+        DB::select($sql);
+         $this->store_bodetuluan_tag($bodetuluan_id,$tag_ids);
+    }
+
+    public function store_resource_tag($resource_id,$tag_ids)
+    {
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['resource_id'] = $resource_id;
+            \App\Modules\Resource\Models\TagResource::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+
+
+    public function update_resource_tag($resource_id,$tag_ids)
+    {
+        $sql = "delete from tag_resources where resource_id = ".$resource_id;
+        DB::select($sql);
+         $this->store_resource_tag($resource_id,$tag_ids);
+    }
+    public function store_book_tag($book_id,$tag_ids)
+    {
+        if(!$tag_ids || count($tag_ids) == 0)
+            return;
+        foreach($tag_ids as $tag_id)
+        {
+            $tag = Tag::find($tag_id);
+            if(!$tag)
+            {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug( $datatag['title'] );
+                $slug_count = Tag::where('slug',$slug)->count();
+                if($slug_count > 0)
+                {
+                    $slug .= time().'-'.$slug;
+                }
+                $datatag['slug'] = $slug;
+                
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+            $data['tag_id'] = $tag->id;
+            $data['book_id'] = $book_id;
+            \App\Modules\Book\Models\TagBook::create($data);
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+    public function update_book_tag($book_id,$tag_ids)
+    {
+        $sql = "delete from tag_books where book_id = ".$book_id;
+        DB::select($sql);
+         $this->store_book_tag($book_id,$tag_ids);
+    }
+
+
+    // event tag
+
+    public function store_event_tag($event_id, $tag_ids)
+    {
+        if (!$tag_ids || count($tag_ids) == 0) {
+            return;
+        }
+    
+        foreach ($tag_ids as $tag_id) {
+            $tag = Tag::find($tag_id);
+            if (!$tag) {
+                $datatag['title'] = $tag_id;
+                $slug = Str::slug($datatag['title']);
+                $slug_count = Tag::where('slug', $slug)->count();
+                if ($slug_count > 0) {
+                    $slug .= time() . '-' . $slug;
+                }
+                $datatag['slug'] = $slug;
+    
+                $tag = Tag::create($datatag);
+                sleep(1);
+            }
+    
+            $data['tag_id'] = $tag->id;
+            $data['event_id'] = $event_id;
+            \App\Modules\Events\Models\TagEvent::create($data);
+    
+            $tag->hit += 1;
+            $tag->save();
+        }
+    }
+    
+    public function update_event_tag($event_id, $tag_ids)
+    {
+        $sql = "delete from tag_events where event_id = " . $event_id;
+        DB::select($sql);
+    
+        $this->store_event_tag($event_id, $tag_ids);
+    }
+
+
     public function index()
     {
         $func = "tag_list";
